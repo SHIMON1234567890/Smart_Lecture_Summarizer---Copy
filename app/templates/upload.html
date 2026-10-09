@@ -1,24 +1,42 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Upload Lecture</title>
+    <title>Upload Lecture - Smart Lecture Summarizer</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
+        .box { background: #f9f9f9; border: 1px solid #ddd; padding: 15px; border-radius: 6px; margin-top: 10px; max-height: 300px; overflow-y: auto; white-space: pre-wrap; }
+        .summary-box { background: #eef7fc; border: 1px solid #bce8f1; padding: 15px; border-radius: 6px; margin-top: 10px; }
+        .nav { margin-bottom: 20px; }
+        button { padding: 10px 18px; font-size: 15px; cursor: pointer; }
+    </style>
 </head>
 
 <body>
 
-    <h1>Smart Lecture Summarizer</h1>
+    <div class="nav">
+        <strong>Smart Lecture Summarizer</strong> | <a href="/logout">Logout</a>
+    </div>
 
     <h2>Upload Lecture Video</h2>
 
     <form method="POST" enctype="multipart/form-data">
-
         <input type="file" name="video" accept="video/*" required>
-
         <br><br>
-
-        <button type="submit">Upload Video</button>
-
+        <button type="submit">Upload & Summarize</button>
     </form>
+
+    {% if success %}
+    <hr style="margin: 30px 0;">
+    <h3>Generated Summary:</h3>
+    <div class="summary-box">
+        {{ summary }}
+    </div>
+
+    <h3>Full Lecture Transcript:</h3>
+    <div class="box">
+        {{ transcript }}
+    </div>
+    {% endif %}
 
 </body>
 </html>

@@ -1,1 +1,7 @@
 Flask
+transformers
+torch
+openai-whisper
+moviepy
+imageio-ffmpeg
+werkzeug
