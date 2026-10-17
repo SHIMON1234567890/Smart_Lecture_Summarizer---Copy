@@ -5,3 +5,7 @@ openai-whisper
 moviepy
 imageio-ffmpeg
 werkzeug
+youtube-transcript-api
+yt-dlp
+datasets
+

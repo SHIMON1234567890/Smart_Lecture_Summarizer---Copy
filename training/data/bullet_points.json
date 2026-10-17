@@ -1,0 +1,17 @@
+[
+  {
+    "id": "bp_01",
+    "topic": "Machine Learning Fundamentals",
+    "transcript": "In today's lecture, we covered the basics of supervised versus unsupervised learning. Supervised learning requires labeled training data where each input is paired with the correct output target. Common examples include classification, like spam detection, and regression, such as predicting housing prices. In contrast, unsupervised learning deals with unlabeled data, aiming to discover hidden patterns or groupings. Key techniques include k-means clustering and principal component analysis for dimensionality reduction. Finally, we emphasized the importance of preventing overfitting by using validation sets, cross-validation, and regularization techniques.",
+    "summary_type": "bullet_points",
+    "target_summary": "• Supervised learning uses labeled datasets to train models for classification (e.g., spam filtering) and regression (e.g., price forecasting).\n• Unsupervised learning discovers underlying structures in unlabeled data using clustering (k-means) and dimensionality reduction (PCA).\n• Overfitting should be mitigated through validation splits, k-fold cross-validation, and regularization methods."
+  },
+  {
+    "id": "bp_02",
+    "topic": "Photosynthesis and Plant Biology",
+    "transcript": "Welcome back. Today we delve into photosynthesis, the biochemical process through which green plants, algae, and certain bacteria convert sunlight into chemical energy. Photosynthesis occurs inside plant cells within organelles known as chloroplasts, specifically via the green pigment chlorophyll. The overall reaction uses carbon dioxide from the air and water absorbed through roots, energized by solar photons, to produce glucose sugar and oxygen gas. There are two primary phases: the light-dependent reactions in the thylakoid membranes which generate ATP and NADPH, and the Calvin cycle in the stroma which fixes carbon into sugars.",
+    "summary_type": "bullet_points",
+    "target_summary": "• Photosynthesis converts sunlight, water, and carbon dioxide into chemical energy (glucose) and oxygen gas.\n• The reaction takes place within chloroplasts, facilitated by the light-absorbing pigment chlorophyll.\n• Light-dependent reactions in thylakoid membranes produce ATP and NADPH energy carriers.\n• The light-independent Calvin cycle in the stroma uses these carriers to fix carbon dioxide into glucose."
+  }
+]
+

@@ -1,0 +1,10 @@
+[
+  {
+    "id": "ai_01",
+    "topic": "Software Engineering - Agile & Scrum Methodology",
+    "transcript": "In today's lab session, we broke down the Scrum Agile framework for team project delivery. Sprint planning occurs at the beginning of each two-to-four-week development cycle where stories are selected from the product backlog. Each morning, conduct a 15-minute daily standup answering three questions: what you did yesterday, what you will do today, and what blockers impede progress. At the end of each sprint, hold a sprint review demo for stakeholders followed by an internal team retrospective to identify process bottlenecks. For homework, team leaders must finalize their Jira Kanban boards and submit user stories with acceptance criteria before Friday at 5 PM.",
+    "summary_type": "action_items",
+    "target_summary": "### Core Discussion Topics\n- Implementation of Scrum Agile framework for team project management.\n- Iterative cadence: 2-4 week sprints, sprint planning, daily standups, review, and retro.\n\n### Actionable Next Steps\n1. [ ] Conduct daily 15-minute standup covering yesterday's work, today's goals, and blockers.\n2. [ ] Schedule end-of-sprint demo and retrospective meeting.\n3. [ ] **Immediate Assignment**: Team leads must finalize Jira Kanban boards and write user stories with acceptance criteria by Friday, 5:00 PM."
+  }
+]
+

@@ -1,0 +1,10 @@
+[
+  {
+    "id": "ep_01",
+    "topic": "Computer Networks - The OSI Model",
+    "transcript": "Let's review the Open Systems Interconnection model for your upcoming midterm. The OSI model partitions network communications into seven distinct conceptual layers: Physical, Data Link, Network, Transport, Session, Presentation, and Application. The Physical layer transmits raw bit streams over physical media. Data Link packages bits into frames and manages MAC addressing and hop-to-hop delivery. Network layer handles logical IP addressing and packet routing across networks. Transport layer guarantees end-to-end communication reliability via TCP or low latency via UDP. Remember that routers operate primarily at Layer 3, switches at Layer 2, and hub devices at Layer 1.",
+    "summary_type": "exam_prep",
+    "target_summary": "**Key Definitions & Review Questions:**\n• **Q: What are the seven OSI layers from lowest to highest?**\n  - A: Physical (1), Data Link (2), Network (3), Transport (4), Session (5), Presentation (6), Application (7).\n• **Q: What is the primary function and unit of Layer 2 vs Layer 3?**\n  - A: Layer 2 (Data Link) processes Frames using MAC addresses; Layer 3 (Network) routes Packets using IP addresses.\n• **Q: What hardware devices correspond to layers 1, 2, and 3?**\n  - A: Layer 1 = Hubs, Layer 2 = Switches, Layer 3 = Routers.\n• **Important Exam Note:** Contrast TCP (connection-oriented, reliable) vs UDP (connectionless, fast) at Transport Layer 4."
+  }
+]
+

@@ -1,42 +1,207 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Upload Lecture - Smart Lecture Summarizer</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Summary - Smart Lecture Summarizer</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
-        .box { background: #f9f9f9; border: 1px solid #ddd; padding: 15px; border-radius: 6px; margin-top: 10px; max-height: 300px; overflow-y: auto; white-space: pre-wrap; }
-        .summary-box { background: #eef7fc; border: 1px solid #bce8f1; padding: 15px; border-radius: 6px; margin-top: 10px; }
-        .nav { margin-bottom: 20px; }
-        button { padding: 10px 18px; font-size: 15px; cursor: pointer; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        body { background-color: #f4f6f9; color: #1e293b; line-height: 1.5; }
+        .navbar { background: #1e293b; color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
+        .navbar h1 { font-size: 20px; font-weight: 600; }
+        .nav-links a { color: #cbd5e1; text-decoration: none; margin-left: 20px; font-size: 14px; }
+        .nav-links a:hover { color: white; }
+        .container { max-width: 800px; margin: 30px auto; padding: 0 20px; }
+        .card { background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 30px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
+        .title { font-size: 22px; font-weight: 700; color: #0f172a; margin-bottom: 8px; }
+        .subtitle { font-size: 14px; color: #64748b; margin-bottom: 25px; }
+        
+        /* Tabs */
+        .tabs { display: flex; border-bottom: 2px solid #e2e8f0; margin-bottom: 25px; }
+        .tab-btn { flex: 1; padding: 12px 16px; background: none; border: none; border-bottom: 2px solid transparent; margin-bottom: -2px; font-size: 15px; font-weight: 600; color: #64748b; cursor: pointer; text-align: center; }
+        .tab-btn.active { color: #2563eb; border-bottom-color: #2563eb; }
+        
+        /* Forms */
+        .form-group { margin-bottom: 20px; }
+        label { display: block; font-size: 14px; font-weight: 600; color: #334155; margin-bottom: 6px; }
+        input[type="text"], input[type="url"], select { width: 100%; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; color: #1e293b; background: white; }
+        input:focus, select:focus { outline: none; border-color: #2563eb; ring: 2px solid #bfdbfe; }
+        .file-dropzone { border: 2px dashed #cbd5e1; border-radius: 8px; padding: 25px; text-align: center; background: #f8fafc; cursor: pointer; }
+        .file-dropzone:hover { border-color: #93c5fd; background: #eff6ff; }
+        .helper-text { font-size: 12px; color: #64748b; margin-top: 4px; }
+        
+        /* Alert */
+        .alert-error { background: #fee2e2; border: 1px solid #f87171; color: #991b1b; padding: 12px 16px; border-radius: 6px; margin-bottom: 20px; font-size: 14px; }
+        
+        /* Submit Button */
+        .btn-submit { width: 100%; padding: 12px; background: #2563eb; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: 600; cursor: pointer; transition: background 0.2s; display: flex; justify-content: center; align-items: center; gap: 8px; }
+        .btn-submit:hover { background: #1d4ed8; }
+        
+        /* Loading Overlay */
+        #loadingSpinner { display: none; text-align: center; padding: 20px; }
+        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #2563eb; border-radius: 50%; width: 36px; height: 36px; animation: spin 1s linear infinite; margin: 0 auto 12px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
-
 <body>
 
-    <div class="nav">
-        <strong>Smart Lecture Summarizer</strong> | <a href="/logout">Logout</a>
+    <nav class="navbar">
+        <h1>📚 Smart Lecture Summarizer</h1>
+        <div class="nav-links">
+            <a href="/folders">📁 Folders</a>
+            <a href="/upload">✨ Create Summary</a>
+            <a href="/logout">🚪 Logout</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        
+        <div class="card">
+            
+            <h2 class="title">Create Lecture Summary</h2>
+            <p class="subtitle">Extract audio, generate transcripts, and summarize in your chosen format</p>
+
+            {% if error %}
+            <div class="alert-error">
+                ⚠️ {{ error }}
+            </div>
+            {% endif %}
+
+            <!-- Input Tabs -->
+            <div class="tabs">
+                <button type="button" class="tab-btn active" id="tabFileBtn" onclick="switchTab('file')">📁 Upload Video / Audio</button>
+                <button type="button" class="tab-btn" id="tabYtBtn" onclick="switchTab('youtube')">🔴 YouTube Link</button>
+            </div>
+
+            <form id="summaryForm" method="POST" enctype="multipart/form-data" onsubmit="showLoading()">
+                <input type="hidden" name="source_mode" id="sourceModeInput" value="file">
+
+                <!-- Mode 1: File Upload Section -->
+                <div id="fileSection">
+                    <div class="form-group">
+                        <label>Select Lecture File (Video or Audio):</label>
+                        <div class="file-dropzone" onclick="document.getElementById('videoFile').click()">
+                            <p id="fileLabel" style="font-weight: 500;">Click to browse files (MP4, MKV, AVI, MP3, WAV, M4A)</p>
+                            <input type="file" id="videoFile" name="video" accept="video/*,audio/*" style="display: none;" onchange="updateFileName(this)">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mode 2: YouTube URL Section -->
+                <div id="youtubeSection" style="display: none;">
+                    <div class="form-group">
+                        <label>YouTube Video Link:</label>
+                        <input type="url" name="youtube_url" placeholder="https://www.youtube.com/watch?v=... or https://youtu.be/...">
+                        <p class="helper-text">Supports direct video links, shorts, and shared URLs. Extracts captions or transcribes audio automatically.</p>
+                    </div>
+                </div>
+
+                <!-- Custom Title -->
+                <div class="form-group">
+                    <label>Lecture Title (Optional):</label>
+                    <input type="text" name="custom_title" placeholder="e.g., Intro to Neural Networks - Week 3">
+                </div>
+
+                <!-- Summary Style Selector (The 5 Types) -->
+                <div class="form-group">
+                    <label>Summary Type & Style:</label>
+                    <select name="summary_type" id="styleSelect" onchange="updateStyleDescription()">
+                        {% for key, val in summary_types.items() %}
+                        <option value="{{ key }}" {% if key == 'bullet_points' %}selected{% endif %}>
+                            {{ val.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <p class="helper-text" id="styleDescription">Concise high-impact bulleted list of essential points and conclusions.</p>
+                </div>
+
+                <!-- Language Selection -->
+                <div class="form-group">
+                    <label>Output Language:</label>
+                    <select name="target_lang" id="langSelect">
+                        {% for code, name in supported_languages.items() %}
+                        <option value="{{ code }}" {% if code == 'en' %}selected{% endif %}>🌐 {{ name }}</option>
+                        {% endfor %}
+                    </select>
+                    <p class="helper-text">Generate the summary directly in your chosen language.</p>
+                </div>
+
+
+                <!-- Folder Selection -->
+                <div class="form-group">
+                    <label>Save to Folder:</label>
+                    <select name="folder_id" id="folderSelect">
+                        {% for f in folders %}
+                        <option value="{{ f.id }}" {% if selected_folder_id == f.id %}selected{% endif %}>
+                            📂 {{ f.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Create New Folder Option -->
+                <div class="form-group">
+                    <label>Or Create a New Folder:</label>
+                    <input type="text" name="new_folder_name" placeholder="Type new folder name (optional)">
+                    <p class="helper-text">If provided, this new folder will be created and the summary will be placed inside it.</p>
+                </div>
+
+                <button type="submit" class="btn-submit" id="submitBtn">
+                    <span>⚡ Generate Summary</span>
+                </button>
+
+                <div id="loadingSpinner">
+                    <div class="spinner"></div>
+                    <p style="font-weight: 600; color: #2563eb;">Processing lecture...</p>
+                    <p style="font-size: 13px; color: #64748b;">Extracting audio, transcribing with Whisper, and generating styled summary with BART. Please wait.</p>
+                </div>
+
+            </form>
+
+        </div>
+
     </div>
 
-    <h2>Upload Lecture Video</h2>
+    <script>
+        const styleDescriptions = {
+            'bullet_points': 'Concise high-impact bulleted list of essential points and conclusions.',
+            'detailed_notes': 'Multi-section notes with topic headers and in-depth explanations.',
+            'executive_summary': 'Crisp 2-4 sentence high-level synthesis capturing core findings.',
+            'exam_prep': 'Review questions, key definitions, formulas, and flashcard-style concepts.',
+            'action_items': 'Core topics followed by clear actionable tasks and next steps.'
+        };
 
-    <form method="POST" enctype="multipart/form-data">
-        <input type="file" name="video" accept="video/*" required>
-        <br><br>
-        <button type="submit">Upload & Summarize</button>
-    </form>
+        function switchTab(mode) {
+            document.getElementById('sourceModeInput').value = mode;
+            if (mode === 'file') {
+                document.getElementById('fileSection').style.display = 'block';
+                document.getElementById('youtubeSection').style.display = 'none';
+                document.getElementById('tabFileBtn').classList.add('active');
+                document.getElementById('tabYtBtn').classList.remove('active');
+            } else {
+                document.getElementById('fileSection').style.display = 'none';
+                document.getElementById('youtubeSection').style.display = 'block';
+                document.getElementById('tabFileBtn').classList.remove('active');
+                document.getElementById('tabYtBtn').classList.add('active');
+            }
+        }
 
-    {% if success %}
-    <hr style="margin: 30px 0;">
-    <h3>Generated Summary:</h3>
-    <div class="summary-box">
-        {{ summary }}
-    </div>
+        function updateFileName(input) {
+            if (input.files && input.files[0]) {
+                document.getElementById('fileLabel').innerText = "Selected: " + input.files[0].name;
+            }
+        }
 
-    <h3>Full Lecture Transcript:</h3>
-    <div class="box">
-        {{ transcript }}
-    </div>
-    {% endif %}
+        function updateStyleDescription() {
+            const selected = document.getElementById('styleSelect').value;
+            document.getElementById('styleDescription').innerText = styleDescriptions[selected] || '';
+        }
+
+        function showLoading() {
+            document.getElementById('submitBtn').style.display = 'none';
+            document.getElementById('loadingSpinner').style.display = 'block';
+        }
+    </script>
 
 </body>
 </html>

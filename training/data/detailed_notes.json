@@ -1,0 +1,10 @@
+[
+  {
+    "id": "dn_01",
+    "topic": "Operating Systems - Process Scheduling",
+    "transcript": "Today we explored process scheduling in modern operating systems. The CPU scheduler decides which ready process receives CPU execution time. We analyzed non-preemptive algorithms like First-Come First-Served, which suffers from the convoy effect, and Shortest Job Next, which minimizes average waiting time but risks starvation for longer jobs. Then we evaluated preemptive schedulers including Round Robin, which allocates a fixed time quantum to each process ensuring fairness and responsiveness for interactive users, and Priority Scheduling which can incorporate aging to avoid starvation. Multi-Level Feedback Queues were highlighted as the most versatile implementation used in modern OS kernels like Linux and Windows.",
+    "summary_type": "detailed_notes",
+    "target_summary": "### 1. Overview of CPU Scheduling\nThe process scheduler allocates CPU cores among runnable processes in memory, balancing throughput, latency, and fairness.\n\n### 2. Non-Preemptive Scheduling Algorithms\n- **First-Come, First-Served (FCFS)**: Executes in arrival order; prone to the convoy effect where short processes wait behind long ones.\n- **Shortest Job First (SJF)**: Yields optimal average wait time, but execution durations must be estimated, leading to starvation risks.\n\n### 3. Preemptive Scheduling Algorithms\n- **Round Robin (RR)**: Enforces time slices (quanta). Balances responsiveness for multi-user systems.\n- **Priority Scheduling**: Uses priority rankings; employs process aging techniques to combat starvation.\n\n### 4. Modern Implementations\n- **Multi-Level Feedback Queues (MLFQ)**: Dynamically adjusts process priorities based on burst behavior, widely deployed in Linux and Windows kernels."
+  }
+]
+

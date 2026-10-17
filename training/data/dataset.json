@@ -1,0 +1,62 @@
+{
+  "summary_types": [
+    {
+      "key": "bullet_points",
+      "label": "Bullet Points & Key Takeaways",
+      "description": "Concise high-impact bulleted list of essential points and conclusions."
+    },
+    {
+      "key": "detailed_notes",
+      "label": "Comprehensive Study Notes",
+      "description": "Multi-section notes with topic headers and in-depth explanations."
+    },
+    {
+      "key": "executive_summary",
+      "label": "Executive Summary / TL;DR",
+      "description": "Crisp 2-4 sentence high-level synthesis capturing core findings."
+    },
+    {
+      "key": "exam_prep",
+      "label": "Exam Revision & Q&A",
+      "description": "Review questions, key definitions, formulas, and flashcard-style concepts."
+    },
+    {
+      "key": "action_items",
+      "label": "Topics & Actionable Steps",
+      "description": "Core topics followed by clear actionable tasks and next steps."
+    }
+  ],
+  "samples": [
+    {
+      "summary_type": "bullet_points",
+      "topic": "Machine Learning Fundamentals",
+      "transcript": "In today's lecture, we covered the basics of supervised versus unsupervised learning. Supervised learning requires labeled training data where each input is paired with the correct output target. Common examples include classification, like spam detection, and regression, such as predicting housing prices. In contrast, unsupervised learning deals with unlabeled data, aiming to discover hidden patterns or groupings. Key techniques include k-means clustering and principal component analysis for dimensionality reduction. Finally, we emphasized the importance of preventing overfitting by using validation sets, cross-validation, and regularization techniques.",
+      "target_summary": "• Supervised learning uses labeled datasets to train models for classification (e.g., spam filtering) and regression (e.g., price forecasting).\n• Unsupervised learning discovers underlying structures in unlabeled data using clustering (k-means) and dimensionality reduction (PCA).\n• Overfitting should be mitigated through validation splits, k-fold cross-validation, and regularization methods."
+    },
+    {
+      "summary_type": "detailed_notes",
+      "topic": "Operating Systems - Process Scheduling",
+      "transcript": "Today we explored process scheduling in modern operating systems. The CPU scheduler decides which ready process receives CPU execution time. We analyzed non-preemptive algorithms like First-Come First-Served, which suffers from the convoy effect, and Shortest Job Next, which minimizes average waiting time but risks starvation for longer jobs. Then we evaluated preemptive schedulers including Round Robin, which allocates a fixed time quantum to each process ensuring fairness and responsiveness for interactive users, and Priority Scheduling which can incorporate aging to avoid starvation. Multi-Level Feedback Queues were highlighted as the most versatile implementation used in modern OS kernels like Linux and Windows.",
+      "target_summary": "### 1. Overview of CPU Scheduling\nThe process scheduler allocates CPU cores among runnable processes in memory, balancing throughput, latency, and fairness.\n\n### 2. Non-Preemptive Scheduling Algorithms\n- **First-Come, First-Served (FCFS)**: Executes in arrival order; prone to the convoy effect where short processes wait behind long ones.\n- **Shortest Job First (SJF)**: Yields optimal average wait time, but execution durations must be estimated, leading to starvation risks.\n\n### 3. Preemptive Scheduling Algorithms\n- **Round Robin (RR)**: Enforces time slices (quanta). Balances responsiveness for multi-user systems.\n- **Priority Scheduling**: Uses priority rankings; employs process aging techniques to combat starvation.\n\n### 4. Modern Implementations\n- **Multi-Level Feedback Queues (MLFQ)**: Dynamically adjusts process priorities based on burst behavior, widely deployed in Linux and Windows kernels."
+    },
+    {
+      "summary_type": "executive_summary",
+      "topic": "Microeconomics - Supply and Demand Dynamics",
+      "transcript": "In this economics lecture, we discussed market equilibrium determined by the intersection of supply and demand curves. The law of demand establishes an inverse relationship between price and quantity demanded, holding all else equal. Conversely, the law of supply demonstrates that higher prices incentivize suppliers to produce more. When market forces operate freely without artificial price ceilings or price floors, price naturally adjusts to balance quantity supplied and demanded. Shifts in demand or supply occur through external factors such as consumer income, production costs, consumer preferences, and technological breakthroughs.",
+      "target_summary": "Market equilibrium is established at the intersection of supply and demand curves, where price adjusts to clear the market. While price changes cause movements along the curve, external shocks—such as production input costs and consumer preferences—shift curves, creating new equilibrium pricing and quantities."
+    },
+    {
+      "summary_type": "exam_prep",
+      "topic": "Computer Networks - The OSI Model",
+      "transcript": "Let's review the Open Systems Interconnection model for your upcoming midterm. The OSI model partitions network communications into seven distinct conceptual layers: Physical, Data Link, Network, Transport, Session, Presentation, and Application. The Physical layer transmits raw bit streams over physical media. Data Link packages bits into frames and manages MAC addressing and hop-to-hop delivery. Network layer handles logical IP addressing and packet routing across networks. Transport layer guarantees end-to-end communication reliability via TCP or low latency via UDP. Remember that routers operate primarily at Layer 3, switches at Layer 2, and hub devices at Layer 1.",
+      "target_summary": "**Key Definitions & Review Questions:**\n• **Q: What are the seven OSI layers from lowest to highest?**\n  - A: Physical (1), Data Link (2), Network (3), Transport (4), Session (5), Presentation (6), Application (7).\n• **Q: What is the primary function and unit of Layer 2 vs Layer 3?**\n  - A: Layer 2 (Data Link) processes Frames using MAC addresses; Layer 3 (Network) routes Packets using IP addresses.\n• **Q: What hardware devices correspond to layers 1, 2, and 3?**\n  - A: Layer 1 = Hubs, Layer 2 = Switches, Layer 3 = Routers.\n• **Important Exam Note:** Contrast TCP (connection-oriented, reliable) vs UDP (connectionless, fast) at Transport Layer 4."
+    },
+    {
+      "summary_type": "action_items",
+      "topic": "Software Engineering - Agile & Scrum Methodology",
+      "transcript": "In today's lab session, we broke down the Scrum Agile framework for team project delivery. Sprint planning occurs at the beginning of each two-to-four-week development cycle where stories are selected from the product backlog. Each morning, conduct a 15-minute daily standup answering three questions: what you did yesterday, what you will do today, and what blockers impede progress. At the end of each sprint, hold a sprint review demo for stakeholders followed by an internal team retrospective to identify process bottlenecks. For homework, team leaders must finalize their Jira Kanban boards and submit user stories with acceptance criteria before Friday at 5 PM.",
+      "target_summary": "### Core Discussion Topics\n- Implementation of Scrum Agile framework for team project management.\n- Iterative cadence: 2-4 week sprints, sprint planning, daily standups, review, and retro.\n\n### Actionable Next Steps\n1. [ ] Conduct daily 15-minute standup covering yesterday's work, today's goals, and blockers.\n2. [ ] Schedule end-of-sprint demo and retrospective meeting.\n3. [ ] **Immediate Assignment**: Team leads must finalize Jira Kanban boards and write user stories with acceptance criteria by Friday, 5:00 PM."
+    }
+  ]
+}
+

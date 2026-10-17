@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ folder.name }} - Folder Details</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        body { background-color: #f4f6f9; color: #333; }
+        .navbar { background: #1e293b; color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
+        .navbar h1 { font-size: 20px; font-weight: 600; }
+        .nav-links a { color: #cbd5e1; text-decoration: none; margin-left: 20px; font-size: 14px; }
+        .nav-links a:hover { color: white; }
+        .container { max-width: 1000px; margin: 30px auto; padding: 0 20px; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; flex-wrap: wrap; gap: 10px; }
+        .btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 16px; border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: 500; cursor: pointer; border: none; }
+        .btn-primary { background: #2563eb; color: white; }
+        .btn-primary:hover { background: #1d4ed8; }
+        .btn-outline { background: white; color: #475569; border: 1px solid #cbd5e1; }
+        .btn-danger { background: #ef4444; color: white; }
+        .card { background: white; border-radius: 10px; border: 1px solid #e2e8f0; padding: 25px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .empty-state { text-align: center; padding: 50px 20px; color: #64748b; }
+        .summary-grid { display: grid; grid-template-columns: 1fr; gap: 15px; }
+        .summary-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 18px; display: flex; justify-content: space-between; align-items: center; transition: all 0.2s; }
+        .summary-card:hover { border-color: #93c5fd; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .badge { display: inline-block; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 500; margin-right: 6px; }
+        .badge-yt { background: #fee2e2; color: #b91c1c; }
+        .badge-file { background: #e0f2fe; color: #0369a1; }
+        .badge-style { background: #f3e8ff; color: #7e22ce; }
+        .title { font-size: 16px; font-weight: 600; color: #0f172a; text-decoration: none; display: block; margin-bottom: 6px; }
+        .title:hover { color: #2563eb; }
+        .meta { font-size: 12px; color: #64748b; }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <h1>📚 Smart Lecture Summarizer</h1>
+        <div class="nav-links">
+            <a href="/folders">📁 Folders</a>
+            <a href="/upload">✨ Create Summary</a>
+            <a href="/logout">🚪 Logout</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        
+        <div style="margin-bottom: 15px;">
+            <a href="/folders" style="color: #64748b; text-decoration: none; font-size: 14px;">← Back to All Folders</a>
+        </div>
+
+        <div class="header">
+            <div>
+                <h2 style="font-size: 26px; color: #0f172a;">📂 {{ folder.name }}</h2>
+                <p style="color: #64748b; font-size: 13px;">Created on {{ folder.created_at[:10] if folder.created_at else '' }} • {{ summaries|length }} summaries</p>
+            </div>
+            <div>
+                <a href="/upload?folder_id={{ folder.id }}" class="btn btn-primary">➕ Add Summary to this Folder</a>
+            </div>
+        </div>
+
+        {% if summaries %}
+        <div class="summary-grid">
+            {% for s in summaries %}
+            <div class="summary-card">
+                <div>
+                    <a href="/summary/{{ s.id }}" class="title">{{ s.title }}</a>
+                    <div style="margin-bottom: 6px;">
+                        {% if s.source_type == 'youtube' %}
+                            <span class="badge badge-yt">YouTube</span>
+                        {% else %}
+                            <span class="badge badge-file">Uploaded Audio/Video</span>
+                        {% endif %}
+                        <span class="badge badge-style">{{ summary_types[s.summary_type].name if s.summary_type in summary_types else s.summary_type }}</span>
+                    </div>
+                    <span class="meta">Saved on {{ s.created_at[:16] if s.created_at else '' }}</span>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <a href="/summary/{{ s.id }}" class="btn btn-outline">Read Summary</a>
+                    <form action="/summary/delete/{{ s.id }}" method="POST" onsubmit="return confirm('Delete this summary?');">
+                        <input type="hidden" name="folder_id" value="{{ folder.id }}">
+                        <button type="submit" class="btn btn-danger" style="padding: 9px 12px;">Delete</button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="card empty-state">
+            <h3 style="margin-bottom: 8px;">No summaries in this folder yet</h3>
+            <p style="margin-bottom: 20px;">Upload a lecture recording or paste a YouTube video link to generate your first summary.</p>
+            <a href="/upload?folder_id={{ folder.id }}" class="btn btn-primary">➕ Create Summary Now</a>
+        </div>
+        {% endif %}
+
+    </div>
+
+</body>
+</html>
+
