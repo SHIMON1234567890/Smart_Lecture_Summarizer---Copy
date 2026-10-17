@@ -13,17 +13,20 @@ except Exception:
     pass
 
 try:
-    from moviepy.editor import VideoFileClip
-except ImportError:
+    from moviepy import VideoFileClip
+except Exception:
     try:
-        from moviepy import VideoFileClip
-    except ImportError:
+        from moviepy.editor import VideoFileClip
+    except Exception:
         VideoFileClip = None
 
 
 def extract_audio(video_path, audio_path):
     if VideoFileClip is None:
-        raise ImportError("moviepy is not installed. Please run: pip install moviepy imageio-ffmpeg")
+        raise ImportError(
+            "moviepy is not installed or the virtual environment is not active. "
+            "Please run the app using 'python run.py' or activate the virtual environment."
+        )
 
     os.makedirs(os.path.dirname(os.path.abspath(audio_path)), exist_ok=True)
 
@@ -35,4 +38,3 @@ def extract_audio(video_path, audio_path):
         video.audio.write_audiofile(audio_path)
     finally:
         video.close()
-
