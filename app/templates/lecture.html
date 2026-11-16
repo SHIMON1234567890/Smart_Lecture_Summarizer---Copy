@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}{{ lecture.title }} · Smart Lecture Summarizer{% endblock %}
+{% block body_class %}page-app{% endblock %}
+
+{% block content %}
+{% set stages = [('extracting', 'Extract audio'), ('transcribing', 'Transcribe'), ('summarizing', 'Summarize'), ('done', 'Ready')] %}
+{% set order = ['queued', 'extracting', 'transcribing', 'summarizing', 'done'] %}
+<section class="app-head" aria-labelledby="lec-title">
+    <div>
+        <a class="back" href="{{ url_for('main.dashboard') }}">← All lectures</a>
+        <h1 id="lec-title">{{ lecture.title }}</h1>
+        <p>Uploaded <time datetime="{{ lecture.created_at }}">{{ lecture.created_at }}</time> UTC</p>
+    </div>
+    <span class="status status--{{ lecture.status }} status--lg" data-status-badge>{{ status_labels.get(lecture.status, lecture.status) }}</span>
+</section>
+
+{% if lecture.status == 'done' %}
+    {% set t_words = (lecture.transcript or '').split()|length %}
+    {% set s_words = (lecture.summary or '').split()|length %}
+    {% set saved = (100 - (s_words * 100 / t_words))|round|int if t_words else 0 %}
+
+    <div class="result">
+        <article class="summary glass" aria-labelledby="sum-title">
+            <div class="summary__head">
+                <h2 id="sum-title">Summary</h2>
+                <div class="summary__actions">
+                    <button class="btn btn--light btn--sm" type="button" data-copy="#summary-text">Copy summary</button>
+                    <a class="btn btn--dark btn--sm" href="{{ url_for('main.download_lecture', lecture_id=lecture.id) }}">Download .txt</a>
+                </div>
+            </div>
+            <p class="summary__text" id="summary-text">{{ lecture.summary }}</p>
+        </article>
+
+        <aside class="stats" aria-label="Lecture figures">
+            <div class="stat glass">
+                <span>Shorter by</span>
+                <strong>{{ saved }}%</strong>
+                <span class="glass-card__bar"><span style="--w: {{ saved }}%"></span></span>
+            </div>
+            <div class="stat glass">
+                <span>Transcript</span>
+                <strong>{{ '{:,}'.format(t_words) }} <small>words</small></strong>
+            </div>
+            <div class="stat glass">
+                <span>Summary</span>
+                <strong>{{ '{:,}'.format(s_words) }} <small>words</small></strong>
+            </div>
+            <div class="stat glass">
+                <span>Reading time saved</span>
+                <strong>{{ ((t_words - s_words) / 230)|round(0, 'ceil')|int }} <small>min</small></strong>
+            </div>
+        </aside>
+
+        <section class="transcript glass" aria-labelledby="tr-title">
+            <div class="summary__head">
+                <h2 id="tr-title">Transcript</h2>
+                <button class="btn btn--dark btn--sm" type="button" data-copy="#transcript-text">Copy transcript</button>
+            </div>
+            <div class="transcript__text" id="transcript-text" tabindex="0">{{ lecture.transcript }}</div>
+        </section>
+    </div>
+
+{% elif lecture.status == 'failed' %}
+    <div class="failed glass" role="alert">
+        <h2>We couldn't finish this lecture</h2>
+        <p class="failed__error">{{ lecture.error or 'Unknown error.' }}</p>
+        {% if lecture.transcript %}
+        <details>
+            <summary>Show the transcript that was produced</summary>
+            <div class="transcript__text">{{ lecture.transcript }}</div>
+        </details>
+        {% endif %}
+        <a class="btn btn--light" href="{{ url_for('main.dashboard') }}">Try another upload</a>
+    </div>
+
+{% else %}
+    {% set current = order.index(lecture.status) if lecture.status in order else 0 %}
+    <div class="working" data-working="{{ url_for('main.lecture_status', lecture_id=lecture.id) }}">
+        <div class="blob blob--working" data-blob data-blob-seed="0.7" aria-hidden="true"><canvas></canvas></div>
+
+        <div class="working__copy">
+            <h2>Summarizing your lecture</h2>
+            <p>You can leave this page. Processing continues on the server and the result will be waiting in your library.</p>
+            <p class="working__live" aria-live="polite" data-working-label>{{ status_labels.get(lecture.status, lecture.status) }}…</p>
+        </div>
+
+        <ol class="stages" data-stages>
+            {% for key, label in stages %}
+            {% set idx = order.index(key) %}
+            <li class="stage {% if idx < current %}is-done{% elif idx == current %}is-active{% endif %}" data-stage="{{ key }}">
+                <span class="stage__dot" aria-hidden="true"></span>{{ label }}
+            </li>
+            {% endfor %}
+        </ol>
+    </div>
+{% endif %}
+
+<form class="danger" method="POST" action="{{ url_for('main.delete_lecture', lecture_id=lecture.id) }}" data-confirm="Delete this lecture and its video? This can't be undone.">
+    <button class="link-btn" type="submit">Delete lecture</button>
+</form>
+{% endblock %}

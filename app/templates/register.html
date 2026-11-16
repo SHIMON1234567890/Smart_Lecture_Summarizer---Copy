@@ -1,28 +1,33 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Register</title>
-</head>
+{% extends "base.html" %}
+{% block title %}Sign up · Smart Lecture Summarizer{% endblock %}
+{% block body_class %}page-auth{% endblock %}
 
-<body>
+{% block content %}
+<section class="auth" aria-labelledby="auth-title">
+    <canvas class="stars stars--hero" data-stars="110" aria-hidden="true"></canvas>
+    <div class="blob blob--auth" data-blob data-blob-seed="3.1" aria-hidden="true"><canvas></canvas></div>
 
-    <h1>Create Account</h1>
+    <form class="auth__card glass" method="POST" novalidate>
+        <h1 id="auth-title">Create your account</h1>
+        <p class="auth__lede">Free, private, and your lectures stay on this server.</p>
 
-    <form method="POST">
+        <label class="field">
+            <span>Username</span>
+            <input type="text" name="username" value="{{ username or '' }}" autocomplete="username"
+                   minlength="3" required autofocus aria-describedby="hint-username">
+            <small id="hint-username">At least 3 characters.</small>
+        </label>
 
-        <label>Username:</label>
-        <input type="text" name="username" required>
+        <label class="field">
+            <span>Password</span>
+            <input type="password" name="password" autocomplete="new-password"
+                   minlength="6" required aria-describedby="hint-password">
+            <small id="hint-password">At least 6 characters.</small>
+        </label>
 
-        <br><br>
+        <button class="btn btn--light btn--lg btn--block" type="submit">Sign up</button>
 
-        <label>Password:</label>
-        <input type="password" name="password" required>
-
-        <br><br>
-
-        <button type="submit">Register</button>
-
+        <p class="auth__switch">Already have an account? <a href="{{ url_for('main.login') }}">Log in</a></p>
     </form>
-
-</body>
-</html>
+</section>
+{% endblock %}

@@ -1,1 +1,6 @@
 Flask
+openai-whisper
+transformers<5  # v5 removed the "summarization" pipeline
+torch
+moviepy
+imageio-ffmpeg

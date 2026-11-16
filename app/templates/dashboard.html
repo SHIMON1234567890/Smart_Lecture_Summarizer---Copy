@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Dashboard · Smart Lecture Summarizer{% endblock %}
+{% block body_class %}page-app{% endblock %}
+
+{% block content %}
+<section class="app-head" aria-labelledby="dash-title">
+    <div>
+        <h1 id="dash-title">Your lectures</h1>
+        <p>{{ lectures|length }} lecture{{ '' if lectures|length == 1 else 's' }} in your library.</p>
+    </div>
+</section>
+
+<div class="dash">
+    <form class="upload glass" method="POST" action="{{ url_for('main.upload') }}"
+          enctype="multipart/form-data" data-upload>
+        <h2>Upload a lecture</h2>
+
+        <label class="drop" data-drop>
+            <input type="file" name="video" accept="video/*,.mkv" required aria-describedby="drop-hint">
+            <span class="drop__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M12 16V4m0 0-5 5m5-5 5 5M4 20h16"/></svg>
+            </span>
+            <span class="drop__text" data-drop-text>Drop a video here, or <u>browse</u></span>
+            <small id="drop-hint">MP4, MOV, MKV, WEBM, AVI or M4V · up to 2 GB</small>
+        </label>
+
+        <label class="field">
+            <span>Title <em>(optional)</em></span>
+            <input type="text" name="title" maxlength="200" placeholder="e.g. Week 4 · Thermodynamics">
+        </label>
+
+        <div class="progress" data-progress hidden>
+            <span class="progress__bar"><span data-progress-bar></span></span>
+            <span class="progress__text" data-progress-text>Uploading…</span>
+        </div>
+
+        <button class="btn btn--light btn--lg btn--block" type="submit" data-upload-btn>Upload &amp; summarize</button>
+    </form>
+
+    <section class="library" aria-labelledby="lib-title">
+        <h2 id="lib-title">Library</h2>
+
+        {% if lectures %}
+        <ul class="lectures">
+            {% for lec in lectures %}
+            <li>
+                <a class="lecture-row" href="{{ url_for('main.lecture', lecture_id=lec.id) }}"
+                   {% if lec.status not in ('done', 'failed') %}data-poll="{{ url_for('main.lecture_status', lecture_id=lec.id) }}"{% endif %}>
+                    <span class="lecture-row__main">
+                        <strong>{{ lec.title }}</strong>
+                        <span class="lecture-row__preview">
+                            {% if lec.summary %}{{ lec.summary|truncate(140) }}
+                            {% elif lec.status == 'failed' %}Processing failed. Open for details.
+                            {% else %}Working on it. This page updates by itself.{% endif %}
+                        </span>
+                    </span>
+                    <span class="lecture-row__side">
+                        <span class="status status--{{ lec.status }}" data-status>{{ status_labels.get(lec.status, lec.status) }}</span>
+                        <time datetime="{{ lec.created_at }}">{{ lec.created_at[:10] }}</time>
+                    </span>
+                </a>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <div class="empty">
+            <div class="blob blob--empty" data-blob data-blob-seed="4.2" aria-hidden="true"><canvas></canvas></div>
+            <p><strong>No lectures yet.</strong> Upload a recording and its summary will appear here.</p>
+        </div>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}
