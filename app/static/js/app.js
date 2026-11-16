@@ -225,4 +225,23 @@
     $$("form[data-confirm]").forEach((f) => {
         f.addEventListener("submit", (e) => { if (!confirm(f.dataset.confirm)) e.preventDefault(); });
     });
+
+    /* ---------- One submit per form: stops double-clicks sending twice ---------- */
+    $$("form:not([data-upload])").forEach((f) => {
+        f.addEventListener("submit", (e) => {
+            if (e.defaultPrevented) return; // e.g. a cancelled confirm
+            if (f.dataset.submitting) { e.preventDefault(); return; }
+            f.dataset.submitting = "1";
+            // disable after the browser has captured the form data
+            setTimeout(() => $$("button[type=submit]", f).forEach((b) => { b.disabled = true; }), 0);
+        });
+    });
+    // forms restored from the back/forward cache must be usable again
+    addEventListener("pageshow", (e) => {
+        if (!e.persisted) return;
+        $$("form[data-submitting]").forEach((f) => {
+            delete f.dataset.submitting;
+            $$("button[type=submit]", f).forEach((b) => { b.disabled = false; });
+        });
+    });
 })();

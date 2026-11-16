@@ -1,4 +1,5 @@
 import os
+import sqlite3
 import uuid
 from functools import wraps
 
@@ -94,25 +95,38 @@ def register():
         elif len(password) < 6:
             flash("Password must be at least 6 characters.", "error")
         else:
+            password_hash = generate_password_hash(password)
             db = get_db()
-            exists = db.execute(
-                "SELECT 1 FROM users WHERE username = ?", (username,)
-            ).fetchone()
-            if exists:
-                db.close()
-                flash("That username is taken.", "error")
-            else:
+            try:
+                # Insert directly and let the UNIQUE constraint decide: a separate
+                # "does it exist?" check races with a second, simultaneous submit.
                 cur = db.execute(
                     "INSERT INTO users (username, password) VALUES (?, ?)",
-                    (username, generate_password_hash(password)),
+                    (username, password_hash),
                 )
                 db.commit()
-                user_id = cur.lastrowid
+                user = {"id": cur.lastrowid, "username": username}
+                message = "Account created. Upload your first lecture."
+            except sqlite3.IntegrityError:
+                existing = db.execute(
+                    "SELECT * FROM users WHERE username = ?", (username,)
+                ).fetchone()
+                # Same name and password: a repeated submit of this same sign-up.
+                if existing and check_password_hash(existing["password"], password):
+                    user = existing
+                    message = f"Welcome, {username}."
+                else:
+                    user = None
+            finally:
                 db.close()
-                session["user_id"] = user_id
-                session["username"] = username
-                flash("Account created. Upload your first lecture.", "success")
+
+            if user:
+                session["user_id"] = user["id"]
+                session["username"] = user["username"]
+                flash(message, "success")
                 return redirect(url_for("main.dashboard"))
+
+            flash("That username is taken. Try another, or log in.", "error")
 
         return render_template("register.html", username=username), 400
 
