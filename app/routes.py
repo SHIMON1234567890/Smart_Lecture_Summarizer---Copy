@@ -1,3 +1,4 @@
+import json
 import os
 import re
 import sqlite3
@@ -187,6 +188,65 @@ def _remove_media(record):
 @main.route("/")
 def index():
     return render_template("index.html")
+
+
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+def _load_json(*parts):
+    path = os.path.join(PROJECT_ROOT, *parts)
+    if not os.path.exists(path):
+        return None
+    with open(path, encoding="utf-8") as f:
+        return json.load(f)
+
+
+def _precision_recall(test, classes):
+    """Macro precision/recall and per-class values, from stored ones or a confusion matrix."""
+    if "per_class_precision" in test:
+        return test["macro_precision"], test["macro_recall"], test["per_class_precision"], test["per_class_recall"]
+    cm = test["confusion_matrix"]  # rows = true class, columns = predicted class
+    prec, rec = {}, {}
+    for i, c in enumerate(classes):
+        predicted = sum(row[i] for row in cm)
+        actual = sum(cm[i])
+        prec[c] = cm[i][i] / predicted if predicted else 0.0
+        rec[c] = cm[i][i] / actual if actual else 0.0
+    return sum(prec.values()) / len(classes), sum(rec.values()) / len(classes), prec, rec
+
+
+@main.route("/models")
+def models_page():
+    """The models behind the app and how well the trained ones score (read from the result files)."""
+    baseline = _load_json("subject_classifier", "results", "baseline.json")
+    distil = _load_json("subject_classifier", "results", "distilbert.json")
+    classes = baseline["classes"] if baseline else []
+
+    rows = []
+    if baseline:
+        for key, name, note, test in (
+            ("majority", "Always says “Computer Science”", "a model that learned nothing", baseline["majority"]["test"]),
+            ("tfidf", "Word-count model (TF-IDF + logistic regression)", "trained on the laptop in ~3 min · used by the app",
+             baseline["tfidf_logreg"]["test"]),
+        ):
+            p, r, _, _ = _precision_recall(test, classes)
+            rows.append({"key": key, "name": name, "note": note, "accuracy": test["accuracy"],
+                         "macro_f1": test["macro_f1"], "precision": p, "recall": r, "per_class_f1": test["per_class_f1"]})
+    if distil:
+        t = distil["test"]
+        p, r, _, _ = _precision_recall(t, classes)
+        rows.append({"key": "distilbert", "name": "DistilBERT, fine-tuned", "note": "trained on a Kaggle GPU in 17 min",
+                     "accuracy": t["accuracy"], "macro_f1": t["macro_f1"], "precision": p, "recall": r,
+                     "per_class_f1": t["per_class_f1"]})
+
+    return render_template(
+        "models.html",
+        baseline=baseline,
+        classes=classes,
+        rows=rows,
+        distil=distil,
+        summary_eval=_load_json("summary_eval", "results", "summary_eval.json"),
+    )
 
 
 @main.route("/register", methods=["GET", "POST"])
