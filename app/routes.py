@@ -13,7 +13,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 
 from .models import get_db
-from .services.pipeline import start_processing, stages_for
+from .services.pipeline import start_processing, stages_for, folder_for_subject
 from .ai.summary_types import SUMMARY_TYPES
 from .ai.translation_service import translate_text, SUPPORTED_LANGUAGES
 
@@ -404,7 +404,8 @@ def upload():
     new_folder_name = request.form.get("new_folder_name", "").strip()[:80]
     upload_dir = current_app.config["UPLOAD_FOLDER"]
 
-    job = {"summary_type": summary_type, "target_lang": target_lang, "upload_dir": upload_dir}
+    job = {"summary_type": summary_type, "target_lang": target_lang, "upload_dir": upload_dir,
+           "user_id": user_id, "auto_folder": request.form.get("folder_id") == "auto" and not new_folder_name}
 
     if source_mode == "youtube":
         url = request.form.get("youtube_url", "").strip()
@@ -438,6 +439,8 @@ def upload():
         cur = db.execute("INSERT INTO folders (user_id, name) VALUES (?, ?)", (user_id, new_folder_name))
         folder_id = cur.lastrowid
     else:
+        # "auto": file it in the default folder now; the pipeline moves it once the
+        # subject classifier has read the transcript.
         folder_id = request.form.get("folder_id", type=int)
         owned = folder_id and db.execute(
             "SELECT 1 FROM folders WHERE id = ? AND user_id = ?", (folder_id, user_id)).fetchone()
@@ -487,6 +490,22 @@ def delete_summary(summary_id):
     if record["folder_id"]:
         return redirect(url_for("main.view_folder", folder_id=record["folder_id"]))
     return redirect(url_for("main.dashboard"))
+
+
+@main.route("/summary/<int:summary_id>/move-to-subject", methods=["POST"])
+@login_required
+def move_to_subject(summary_id):
+    record = _get_own_summary(summary_id)
+    if not record["subject"]:
+        abort(400)
+    folder_id = folder_for_subject(session["user_id"], record["subject"])
+    db = get_db()
+    db.execute("UPDATE summaries SET folder_id = ? WHERE id = ? AND user_id = ?",
+               (folder_id, summary_id, session["user_id"]))
+    db.commit()
+    db.close()
+    flash(f"Moved to “{record['subject']}”.", "success")
+    return redirect(url_for("main.view_summary", summary_id=summary_id))
 
 
 @main.route("/summary/<int:summary_id>/download")

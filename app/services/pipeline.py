@@ -7,7 +7,7 @@ import os
 import threading
 import traceback
 
-from ..models import update_summary
+from ..models import get_db, update_summary
 
 AUDIO_EXTENSIONS = {"mp3", "wav", "m4a", "ogg"}
 
@@ -54,6 +54,38 @@ def _transcript_from_youtube(summary_id, url, upload_dir, has_custom_title):
     return data["transcript"]
 
 
+def _classify(summary_id, transcript, job):
+    """Predict the subject (trained model in subject_classifier/) and, if asked, file the
+    lecture in a folder named after it. A failure here never fails the summary."""
+    try:
+        from ..ai.subject_service import predict_subject
+        result = predict_subject(transcript)
+    except Exception:  # noqa: BLE001
+        traceback.print_exc()
+        return
+    if not result:
+        return
+    update_summary(summary_id, subject=result["subject"], subject_confidence=result["confidence"])
+    if job.get("auto_folder"):
+        folder_id = folder_for_subject(job["user_id"], result["subject"])
+        update_summary(summary_id, folder_id=folder_id)
+
+
+def folder_for_subject(user_id, subject):
+    """The user's folder named after `subject`, created if it doesn't exist."""
+    db = get_db()
+    row = db.execute("SELECT id FROM folders WHERE user_id = ? AND lower(name) = lower(?)",
+                     (user_id, subject)).fetchone()
+    if row:
+        folder_id = row["id"]
+    else:
+        folder_id = db.execute("INSERT INTO folders (user_id, name) VALUES (?, ?)",
+                               (user_id, subject)).lastrowid
+        db.commit()
+    db.close()
+    return folder_id
+
+
 def _run(summary_id, job):
     try:
         if job["source_type"] == "youtube":
@@ -66,6 +98,7 @@ def _run(summary_id, job):
         if not transcript:
             raise RuntimeError("No speech was found in this recording.")
         update_summary(summary_id, transcript=transcript)
+        _classify(summary_id, transcript, job)
 
         update_summary(summary_id, status="summarizing")
         from ..ai.summarizer_service import summarize_text

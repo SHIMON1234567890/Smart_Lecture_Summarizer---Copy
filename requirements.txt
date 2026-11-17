@@ -7,4 +7,5 @@ moviepy
 imageio-ffmpeg
 youtube-transcript-api
 yt-dlp
+scikit-learn  # subject classifier (baseline model)
 datasets<5  # training scripts; v5 needs huggingface-hub 1.x, which transformers 4 rejects
