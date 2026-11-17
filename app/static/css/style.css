@@ -608,6 +608,11 @@ a.tag:hover { color: var(--ink); background: rgba(255, 255, 255, .12); }
 .link-btn--quiet:hover { color: var(--ink); }
 .suggest { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-left: auto; font-size: 14px; color: var(--ink-2); }
 .suggest strong { color: var(--gold); font-weight: 600; }
+.why { margin-top: 12px; font-size: 14px; color: var(--ink-2); max-width: 60ch; }
+.why summary { cursor: pointer; width: max-content; color: var(--ink-2); }
+.why summary:hover { color: var(--ink); }
+.why[open] summary { margin-bottom: 8px; }
+.why p + p { margin-top: 8px; }
 
 
 /* ---------- Reveal ---------- */

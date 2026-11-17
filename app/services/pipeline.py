@@ -65,7 +65,8 @@ def _classify(summary_id, transcript, job):
         return
     if not result:
         return
-    update_summary(summary_id, subject=result["subject"], subject_confidence=result["confidence"])
+    update_summary(summary_id, subject=result["subject"], subject_confidence=result["confidence"],
+                   subject_reasons=", ".join(result.get("reasons") or []) or None)
     if job.get("auto_folder"):
         folder_id = folder_for_subject(job["user_id"], result["subject"])
         update_summary(summary_id, folder_id=folder_id)

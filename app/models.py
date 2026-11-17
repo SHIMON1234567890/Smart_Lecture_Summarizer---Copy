@@ -49,6 +49,7 @@ def create_tables():
             media_filename TEXT,
             subject TEXT,
             subject_confidence REAL,
+            subject_reasons TEXT,
             FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
             FOREIGN KEY (folder_id) REFERENCES folders (id) ON DELETE SET NULL
         )
@@ -63,6 +64,7 @@ def create_tables():
         ("media_filename", "TEXT"),
         ("subject", "TEXT"),
         ("subject_confidence", "REAL"),
+        ("subject_reasons", "TEXT"),
     ):
         if column not in existing:
             conn.execute(f"ALTER TABLE summaries ADD COLUMN {column} {ddl}")

@@ -25,6 +25,13 @@
             {% if summary.target_lang and summary.target_lang != 'en' %}<span class="tag">{{ supported_languages.get(summary.target_lang, summary.target_lang) }}</span>{% endif %}
             <time datetime="{{ summary.created_at }}">{{ (summary.created_at or '')[:16] }} UTC</time>
         </p>
+        {% if summary.subject and summary.subject_reasons %}
+        <details class="why">
+            <summary>Why {{ summary.subject }}?</summary>
+            <p>These words in the transcript pushed the classifier ({{ ((summary.subject_confidence or 0) * 100)|round|int }}% sure) towards {{ summary.subject }}, strongest first:</p>
+            <p class="tags">{% for w in summary.subject_reasons.split(', ') %}<span class="tag">{{ w }}</span>{% endfor %}</p>
+        </details>
+        {% endif %}
     </div>
     {% if summary.subject and (summary.subject_confidence or 0) >= 0.5 and (summary.folder_name or '')|lower != summary.subject|lower %}
     <form class="suggest" method="POST" action="{{ url_for('main.move_to_subject', summary_id=summary.id) }}">

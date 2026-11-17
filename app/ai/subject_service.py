@@ -56,8 +56,24 @@ def _distilbert_probs(text, tok, model, settings):
     return dict(zip(labels, probs.tolist()))
 
 
+def _tfidf_reasons(pipeline, text, subject, k=6):
+    """The words that pushed the TF-IDF model hardest towards `subject`.
+
+    Logistic regression scores a subject as sum(tfidf[word] * weight[subject, word]),
+    so each word's share of the score is tfidf * weight; return the k largest.
+    """
+    vec, clf = pipeline.named_steps["tfidf"], pipeline.named_steps["clf"]
+    row = list(clf.classes_).index(subject)
+    x = vec.transform([text]).tocoo()
+    contrib = x.data * clf.coef_[row, x.col]
+    order = contrib.argsort()[::-1]
+    names = vec.get_feature_names_out()
+    return [str(names[x.col[i]]) for i in order[:k] if contrib[i] > 0]
+
+
 def predict_subject(text):
-    """Return {"subject", "confidence", "top": [(subject, prob), ...], "model"} or None."""
+    """Return {"subject", "confidence", "top": [(subject, prob), ...], "reasons": [word, ...],
+    "model"} or None. `reasons` (TF-IDF model only) are the words behind the decision."""
     words = (text or "").split()
     if len(words) < 30:
         return None
@@ -72,5 +88,6 @@ def predict_subject(text):
         return None
 
     top = sorted(((str(k), float(v)) for k, v in probs.items()), key=lambda kv: kv[1], reverse=True)[:3]
+    reasons = _tfidf_reasons(backend, text, top[0][0]) if name == "tfidf" else []
     return {"subject": top[0][0], "confidence": round(top[0][1], 3),
-            "top": [(k, round(v, 3)) for k, v in top], "model": name}
+            "top": [(k, round(v, 3)) for k, v in top], "reasons": reasons, "model": name}
