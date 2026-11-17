@@ -26,12 +26,26 @@ keep the real mix.
 | model | accuracy | macro-F1 |
 |---|---|---|
 | Majority class (always "Computer Science") | 0.847 | 0.115 |
-| TF-IDF + logistic regression (`baseline.py`) | 0.968 | 0.897 |
-| DistilBERT fine-tuned (`train_distilbert.ipynb`) | *run on Kaggle* | *run on Kaggle* |
+| **TF-IDF + logistic regression** (`baseline.py`) | **0.968** | **0.897** |
+| DistilBERT fine-tuned (`train_distilbert.ipynb`, 4 epochs, Kaggle T4, 17 min) | 0.948 | 0.861 |
 
-Weakest class for the baseline: Information Science (F1 0.57), often confused
-with Computer Science. Full per-class scores and confusion matrices are in
-`results/`.
+Per-class F1 on test:
+
+| | CS | Math | Chem | Physics | Info Sci | Ling | Econ | Eng |
+|---|---|---|---|---|---|---|---|---|
+| TF-IDF + LR | 0.986 | 0.903 | 0.929 | 0.850 | 0.565 | 1.000 | 1.000 | 0.941 |
+| DistilBERT | 0.974 | 0.883 | 0.928 | 0.847 | 0.474 | 1.000 | 0.880 | 0.900 |
+
+**The simple model wins, so the app uses it.** DistilBERT finds the rare
+subjects more often (macro recall 0.942 vs 0.903) but raises far more false
+alarms (macro precision 0.814 vs 0.893). Most of them are Computer Science talks
+labelled Information Science (precision 0.33), a side effect of weighting rare
+classes in the loss. It also reads only the first ~2,000 words (4 × 512 tokens),
+while TF-IDF uses 3,000. Things to try next: no or milder class weights,
+more pieces per lecture, or a long-context model.
+
+Information Science is the hardest class for both models; it overlaps heavily
+with Computer Science. Baseline confusion matrix: `results/baseline.json`.
 
 ## Reproduce
 
@@ -45,7 +59,8 @@ DistilBERT on Kaggle (free GPU):
 3. **Run All** (about 15–25 min).
 4. From the **Output** tab download `subject-distilbert.zip` and `results_distilbert.json`.
 5. Unzip into `subject_classifier/models/distilbert/` and save the JSON as
-   `subject_classifier/results/distilbert.json`. The app switches to it automatically.
+   `subject_classifier/results/distilbert.json`. To make the app use it, start
+   it with the environment variable `SUBJECT_MODEL=distilbert`.
 
 ## Limitations
 

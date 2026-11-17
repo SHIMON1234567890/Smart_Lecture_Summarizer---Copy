@@ -1,9 +1,9 @@
 """Predicts a lecture's subject from its transcript.
 
-Uses the fine-tuned DistilBERT model in subject_classifier/models/distilbert/ when
-it is there (download it from the Kaggle notebook's output), otherwise the
-TF-IDF + logistic-regression baseline (subject_classifier/models/tfidf_logreg.joblib).
-Both are trained by the scripts in subject_classifier/.
+Uses the TF-IDF + logistic-regression model (subject_classifier/models/tfidf_logreg.joblib),
+which scored best on the test split (macro-F1 0.897 vs 0.861 for fine-tuned DistilBERT;
+see subject_classifier/README.md). Set SUBJECT_MODEL=distilbert to use the DistilBERT
+model instead, after unzipping it into subject_classifier/models/distilbert/.
 """
 import json
 import os
@@ -24,7 +24,8 @@ def _load():
     with _lock:
         if _backend is not None:
             return _backend
-        if os.path.exists(os.path.join(DISTILBERT_DIR, "config.json")):
+        want_bert = os.environ.get("SUBJECT_MODEL", "tfidf").lower() == "distilbert"
+        if want_bert and os.path.exists(os.path.join(DISTILBERT_DIR, "config.json")):
             from transformers import AutoModelForSequenceClassification, AutoTokenizer
             settings = {"max_len": 512, "chunks_per_lecture": 4}
             settings_path = os.path.join(DISTILBERT_DIR, "inference.json")
