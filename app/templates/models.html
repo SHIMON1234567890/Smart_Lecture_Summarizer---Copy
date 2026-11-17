@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% block title %}Models · Smart Lecture Summarizer{% endblock %}
+{% block body_class %}page-app{% endblock %}
+
+{% block content %}
+<section class="app-head" aria-labelledby="models-title">
+    <div>
+        <h1 id="models-title">The models behind it</h1>
+        <p>Four AI steps turn a recording into notes. We trained one of them ourselves and measured all the results below on lectures the models never saw during training.</p>
+    </div>
+</section>
+
+<div class="models">
+    <!-- ============ The pipeline ============ -->
+    <section aria-labelledby="pipe-title">
+        <h2 id="pipe-title" class="models__h2">What each model does</h2>
+        <ol class="model-cards">
+            <li class="model-card glass">
+                <span class="model-card__step">1 · Speech → text</span>
+                <h3>Whisper <small>small · OpenAI</small></h3>
+                <p>Listens to the audio and writes down every word, with punctuation. Detects the language by itself; for non-English speech it also produces an English version.</p>
+                <span class="model-card__meta">Pretrained · runs on this computer</span>
+            </li>
+            <li class="model-card glass model-card--ours">
+                <span class="model-card__step">2 · Text → subject</span>
+                <h3>Subject classifier <small>trained by us</small></h3>
+                <p>Reads the transcript and picks one of 8 subjects, so the lecture can be filed automatically. Shows the words behind each decision.</p>
+                <span class="model-card__meta">Trained on {{ '{:,}'.format(baseline.sizes.train) if baseline else '—' }} lectures · results below</span>
+            </li>
+            <li class="model-card glass">
+                <span class="model-card__step">3 · Long text → summary</span>
+                <h3>BART <small>large-CNN · Meta</small></h3>
+                <p>Rewrites text in fewer words. It reads at most ~700 words at once, so the transcript is cut into ~500-word parts, each part is summarized and the results are joined.</p>
+                <span class="model-card__meta">Pretrained on news articles · runs on this computer</span>
+            </li>
+            <li class="model-card glass">
+                <span class="model-card__step">4 · Summary → your language</span>
+                <h3>Google Translate</h3>
+                <p>Translates the finished summary into one of 14 languages, on request.</p>
+                <span class="model-card__meta">Online service · only the summary text is sent</span>
+            </li>
+        </ol>
+    </section>
+
+    <!-- ============ Subject classifier ============ -->
+    {% if rows %}
+    <section aria-labelledby="clf-title">
+        <h2 id="clf-title" class="models__h2">Training the subject classifier</h2>
+        <div class="models__grid">
+            <div class="models__text">
+                <p><strong>Data.</strong> {{ '{:,}'.format(baseline.sizes.train + baseline.sizes.valid + baseline.sizes.test) }} real academic lectures from the TIB dataset, each with a transcript and a subject label. We kept lectures with exactly one subject from 8 subjects.</p>
+                <p><strong>Fair testing.</strong> The lectures were split 70 / 15 / 15: the models learn from the first part, settings are tuned on the second, and the scores below come from the last {{ '{:,}'.format(baseline.sizes.test) }} lectures, which the models never saw.</p>
+                <p><strong>Why not just accuracy?</strong> 85% of the test lectures are Computer Science, so a model that always answers “Computer Science” already scores 85%. <em>Macro-F1</em> scores every subject equally, so that trick gets 0.12.</p>
+            </div>
+
+            <div class="table-wrap glass">
+                <table class="results">
+                    <caption>Test results ({{ '{:,}'.format(baseline.sizes.test) }} lectures)</caption>
+                    <thead><tr><th scope="col">Model</th><th scope="col">Accuracy</th><th scope="col">Macro-F1</th></tr></thead>
+                    <tbody>
+                    {% for r in rows %}
+                    <tr class="{{ 'is-best' if r.key == 'tfidf' else '' }}">
+                        <th scope="row">{{ r.name }}<small>{{ r.note }}</small></th>
+                        <td>{{ '%.1f'|format(r.accuracy * 100) }}%</td>
+                        <td><span class="meter" style="--v: {{ r.macro_f1 }}"><span></span></span><b>{{ '%.3f'|format(r.macro_f1) }}</b></td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="table-wrap glass">
+            <table class="results results--wide">
+                <caption>F1 score per subject (1.0 = perfect)</caption>
+                <thead>
+                    <tr><th scope="col">Subject</th><th scope="col">Test lectures</th>
+                    {% for r in rows if r.key != 'majority' %}<th scope="col">{{ 'Word-count model' if r.key == 'tfidf' else 'DistilBERT' }}</th>{% endfor %}</tr>
+                </thead>
+                <tbody>
+                {% for c in classes %}
+                <tr>
+                    <th scope="row">{{ c }}</th>
+                    <td>{{ baseline.tfidf_logreg.test.confusion_matrix[loop.index0]|sum }}</td>
+                    {% for r in rows if r.key != 'majority' %}<td>{{ '%.2f'|format(r.per_class_f1[c]) }}</td>{% endfor %}
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if distil %}
+        {% set t = rows|selectattr('key', 'equalto', 'tfidf')|first %}
+        {% set d = rows|selectattr('key', 'equalto', 'distilbert')|first %}
+        <div class="finding glass">
+            <h3>Finding: the simpler model won</h3>
+            <p>DistilBERT is a neural network that already understood English; we fine-tuned it for this task. It finds rare subjects more often (recall {{ '%.2f'|format(d.recall) }} vs {{ '%.2f'|format(t.recall) }}) but raises more false alarms (precision {{ '%.2f'|format(d.precision) }} vs {{ '%.2f'|format(t.precision) }}), mostly calling Computer Science talks “Information Science”. Two reasons: we told it to pay extra attention to rare subjects, and it reads only the first ~2,000 words of a lecture, while the word-count model reads 3,000. Subject is mostly a matter of keywords, which word counting captures well.</p>
+            <p>So the app uses the word-count model: more accurate, 4 MB instead of 250 MB, and instant. Open any summary and click <em>“Why …?”</em> under its title to see the words behind its decision.</p>
+        </div>
+        {% endif %}
+    </section>
+    {% endif %}
+
+    <!-- ============ Summary quality ============ -->
+    <section aria-labelledby="sum-eval-title">
+        <h2 id="sum-eval-title" class="models__h2">How good are the summaries?</h2>
+        {% if summary_eval %}
+        {% set names = {'lead_200': 'First 200 words of the transcript', 'app': 'Our summarizer (full summary)', 'app_first200': 'Our summarizer, first 200 words'} %}
+        <div class="models__grid">
+            <div class="models__text">
+                <p><strong>Test.</strong> {{ summary_eval.n }} lectures from the TIB test set (transcripts up to {{ '{:,}'.format(summary_eval.max_transcript_words or 0) }} words, {{ '{:,.0f}'.format(summary_eval.transcript_words_mean) }} on average). Each summary is compared with the abstract the speaker wrote ({{ summary_eval.reference_words_mean|round|int }} words on average).</p>
+                <p><strong>ROUGE</strong> counts shared words (ROUGE-1) and shared word pairs (ROUGE-2) with the abstract. <strong>BERTScore</strong> compares meaning, so different words with the same meaning still count.</p>
+                <p><strong>Baseline.</strong> “First 200 words” is the simplest possible summary. A summarizer should beat it to be worth running.</p>
+            </div>
+            <div class="table-wrap glass">
+                <table class="results">
+                    <caption>Average scores (higher is better)</caption>
+                    <thead><tr><th scope="col">Summary</th><th scope="col">Words</th><th scope="col">ROUGE-1</th><th scope="col">ROUGE-2</th><th scope="col">BERTScore</th></tr></thead>
+                    <tbody>
+                    {% for key in ['lead_200', 'app', 'app_first200'] %}
+                    {% set s = summary_eval.systems[key] %}
+                    <tr><th scope="row">{{ names[key] }}</th><td>{{ s.words_mean|round|int }}</td>
+                        <td>{{ '%.3f'|format(s.rouge1.mean) }}</td><td>{{ '%.3f'|format(s.rouge2.mean) }}</td><td>{{ '%.3f'|format(s.bertscore.mean) }}</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% if summary_finding %}<div class="finding glass"><h3>Finding</h3>{{ summary_finding }}</div>{% endif %}
+        {% else %}
+        <div class="finding glass">
+            <p>The evaluation hasn't been run on this computer yet. Run <code>.venv\Scripts\python summary_eval\evaluate.py</code> (about an hour) and refresh this page.</p>
+        </div>
+        {% endif %}
+    </section>
+
+    <section class="models__end">
+        <p>Want to see it working? {% if current_user %}<a class="btn btn--light" href="{{ url_for('main.dashboard') }}#new">Add a lecture</a>{% else %}<a class="btn btn--light" href="{{ url_for('main.register') }}">Create an account and add a lecture</a>{% endif %}</p>
+    </section>
+</div>
+{% endblock %}
