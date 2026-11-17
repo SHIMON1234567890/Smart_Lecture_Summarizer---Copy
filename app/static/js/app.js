@@ -319,6 +319,30 @@
         });
     }
 
+    /* ---------- Transcript: English / as spoken ---------- */
+    const ttabs = $$("[data-transcript]");
+    if (ttabs.length) {
+        const copyBtn = $("[data-copy-active]");
+        const showT = (tab) => {
+            ttabs.forEach((t) => {
+                const on = t === tab;
+                t.setAttribute("aria-selected", on);
+                t.tabIndex = on ? 0 : -1;
+                document.getElementById(t.dataset.transcript).hidden = !on;
+            });
+            if (copyBtn) copyBtn.dataset.copy = "#" + tab.dataset.transcript;
+        };
+        ttabs.forEach((t) => {
+            t.addEventListener("click", () => showT(t));
+            t.addEventListener("keydown", (e) => {
+                if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+                const next = ttabs[(ttabs.indexOf(t) + 1) % ttabs.length];
+                next.focus();
+                showT(next);
+            });
+        });
+    }
+
     /* ---------- Copy buttons ---------- */
     $$("[data-copy]").forEach((btn) => {
         btn.addEventListener("click", async () => {

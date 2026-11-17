@@ -21,6 +21,7 @@
             <span class="tag" title="Uploaded file">{{ summary.source_url or 'Uploaded file' }}</span>
             {% endif %}
             <span class="tag">{{ style_name }}</span>
+            {% if summary.language and summary.language != 'en' %}<span class="tag tag--folder">Spoken in {{ summary.language_name or summary.language }}</span>{% endif %}
             {% if summary.target_lang and summary.target_lang != 'en' %}<span class="tag">{{ supported_languages.get(summary.target_lang, summary.target_lang) }}</span>{% endif %}
             <time datetime="{{ summary.created_at }}">{{ (summary.created_at or '')[:16] }} UTC</time>
         </p>
@@ -82,9 +83,19 @@
         <section class="transcript glass" aria-labelledby="tr-title">
             <div class="summary__head">
                 <h2 id="tr-title">Transcript</h2>
-                <button class="btn btn--dark btn--sm" type="button" data-copy="#transcript-text">Copy transcript</button>
+                <button class="btn btn--dark btn--sm" type="button" data-copy="#transcript-text" data-copy-active>Copy transcript</button>
             </div>
+            {% if summary.transcript_original %}
+            <div class="seg seg--inline" role="tablist" aria-label="Transcript language" data-transcript-tabs>
+                <button type="button" role="tab" aria-selected="true" data-transcript="transcript-text">English</button>
+                <button type="button" role="tab" aria-selected="false" tabindex="-1" data-transcript="transcript-original">{{ summary.language_name or summary.language }} (as spoken)</button>
+            </div>
+            <p class="transcript__note">The speech was translated to English by Whisper so it could be summarized.</p>
+            {% endif %}
             <div class="transcript__text" id="transcript-text" tabindex="0">{{ summary.transcript }}</div>
+            {% if summary.transcript_original %}
+            <div class="transcript__text" id="transcript-original" tabindex="0" hidden>{{ summary.transcript_original }}</div>
+            {% endif %}
         </section>
     </div>
 

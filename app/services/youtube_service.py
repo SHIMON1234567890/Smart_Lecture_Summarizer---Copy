@@ -3,7 +3,7 @@ import re
 import json
 import urllib.parse
 import urllib.request
-from app.ai.whisper_service import transcribe_audio
+from app.ai.whisper_service import transcribe_multilingual
 
 try:
     from youtube_transcript_api import YouTubeTranscriptApi
@@ -50,32 +50,86 @@ def _snippet_text(entry):
     return entry["text"] if isinstance(entry, dict) else entry.text
 
 
+def _caption_text(transcript):
+    return " ".join(_snippet_text(e) for e in transcript.fetch()).strip()
+
+
+def _translate_long_to_english(text, piece_chars=1500):
+    """Translate long caption text with the app's translation service, piece by piece.
+    Returns None if the service couldn't be reached."""
+    from app.ai.translation_service import translate_chunk
+
+    words, pieces, current = text.split(), [], ""
+    for w in words:
+        if current and len(current) + len(w) + 1 > piece_chars:
+            pieces.append(current)
+            current = w
+        else:
+            current = f"{current} {w}" if current else w
+    if current:
+        pieces.append(current)
+
+    out = []
+    for piece in pieces:
+        translated = translate_chunk(piece, target_lang="en")
+        if not translated or translated == piece:  # service unreachable
+            return None
+        out.append(translated)
+    return " ".join(out)
+
+
 def get_youtube_transcript_from_subtitles(video_id):
     """
-    Attempts to fetch official or auto-generated transcripts using youtube_transcript_api.
+    Fetches captions with youtube_transcript_api.
+
+    Returns {"language", "language_name", "original", "english"} or None. English
+    captions are preferred; otherwise the first caption track is used, with
+    an English translation of it (YouTube's own, else the translation service).
+    Returns None when there are no captions or no English version can be made
+    (the caller then uses Whisper).
     """
     if not YouTubeTranscriptApi:
         return None
 
-    languages = ["en", "en-US", "en-GB"]
-    legacy = hasattr(YouTubeTranscriptApi, "get_transcript")  # versions before 1.0
-    api = None if legacy else YouTubeTranscriptApi()
-
     try:
-        entries = (YouTubeTranscriptApi.get_transcript(video_id, languages=languages)
-                   if legacy else api.fetch(video_id, languages=languages))
-        return " ".join(_snippet_text(e) for e in entries).strip()
-    except Exception as e:
-        print(f"English subtitles not available for {video_id}: {e}")
-
-    try:
-        # Fallback to any available language
-        transcripts = (YouTubeTranscriptApi.list_transcripts(video_id)
-                       if legacy else api.list(video_id))
-        for transcript in transcripts:
-            return " ".join(_snippet_text(e) for e in transcript.fetch()).strip()
+        if hasattr(YouTubeTranscriptApi, "list_transcripts"):  # versions before 1.0
+            tracks = YouTubeTranscriptApi.list_transcripts(video_id)
+        else:
+            tracks = YouTubeTranscriptApi().list(video_id)
     except Exception as e:
         print(f"No subtitles available for {video_id}: {e}")
+        return None
+
+    try:
+        en = tracks.find_transcript(["en", "en-US", "en-GB", "en-IN"])
+        text = _caption_text(en)
+        if text:
+            return {"language": "en", "language_name": "English", "original": text, "english": text}
+    except Exception:
+        pass  # no English track
+
+    for track in tracks:
+        try:
+            original = _caption_text(track)
+            if not original:
+                continue
+            english = None
+            if track.is_translatable:
+                try:
+                    english = _caption_text(track.translate("en"))
+                except Exception as e:
+                    print(f"YouTube couldn't translate {video_id} captions: {e}")
+            if not english:
+                english = _translate_long_to_english(original)
+            if not english:
+                print(f"Captions for {video_id} ({track.language_code}) couldn't be translated to English.")
+                return None
+            code = track.language_code.split("-")[0]
+            name = track.language.replace(" (auto-generated)", "")
+            return {"language": code, "language_name": name, "original": original, "english": english or original}
+        except Exception as e:
+            print(f"Could not use {track.language_code} captions for {video_id}: {e}")
+            return None
     return None
 
 
@@ -103,7 +157,7 @@ def download_youtube_audio_and_transcribe(video_url, video_id, upload_dir="uploa
             audio_path = ydl.prepare_filename(info)
 
         if os.path.exists(audio_path):
-            return transcribe_audio(audio_path)
+            return transcribe_multilingual(audio_path)
     except Exception as e:
         print(f"yt-dlp download failed: {e}")
 
@@ -127,20 +181,22 @@ def process_youtube_video(video_url, upload_dir="uploads"):
     title = fetch_youtube_title(video_url)
 
     # 1. Fast subtitle extraction
-    transcript = get_youtube_transcript_from_subtitles(video_id)
+    result = get_youtube_transcript_from_subtitles(video_id)
 
     # 2. Fallback to audio download + Whisper
-    if not transcript:
-        print(f"Subtitles not found for {video_id}. Attempting audio download & Whisper transcription...")
-        transcript = download_youtube_audio_and_transcribe(video_url, video_id, upload_dir)
+    if not result:
+        print(f"Subtitles not usable for {video_id}. Attempting audio download & Whisper transcription...")
+        result = download_youtube_audio_and_transcribe(video_url, video_id, upload_dir)
 
-    if not transcript or not transcript.strip():
+    if not result or not (result.get("english") or "").strip():
         raise ValueError("Could not extract any transcript from the provided YouTube video.")
 
     return {
         "video_id": video_id,
         "title": title,
-        "transcript": transcript.strip(),
-        "url": video_url
+        "transcript": result["english"].strip(),  # English, for the summarizer
+        "transcript_original": result["original"].strip(),
+        "language": result["language"],
+        "language_name": result["language_name"],
+        "url": video_url,
     }
-

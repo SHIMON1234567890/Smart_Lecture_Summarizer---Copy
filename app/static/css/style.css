@@ -606,6 +606,9 @@ a.tag:hover { color: var(--ink); background: rgba(255, 255, 255, .12); }
 .translate__status { font-size: 13px; color: var(--ink-2); }
 .translate__status.is-error { color: var(--bad); }
 .link-btn--quiet:hover { color: var(--ink); }
+.seg--inline { width: max-content; max-width: 100%; margin-top: 18px; grid-template-columns: auto auto; }
+.seg--inline button { padding: 0 16px; height: 34px; font-size: 13px; }
+.transcript__note { margin-top: 10px; font-size: 13px; color: var(--ink-2); }
 
 
 /* ---------- Reveal ---------- */
