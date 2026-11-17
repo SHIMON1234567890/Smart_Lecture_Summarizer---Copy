@@ -28,6 +28,7 @@
                 {% block nav_links %}
                 <a href="{{ url_for('main.index') }}#how">How it works</a>
                 <a href="{{ url_for('main.index') }}#faq">FAQ</a>
+                <a href="{{ url_for('main.models_page') }}">Models</a>
                 {% if current_user %}<a href="{{ url_for('main.dashboard') }}">Library</a>{% endif %}
                 {% endblock %}
             </nav>
