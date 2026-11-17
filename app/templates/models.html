@@ -126,7 +126,16 @@
                 </table>
             </div>
         </div>
-        {% if summary_finding %}<div class="finding glass"><h3>Finding</h3>{{ summary_finding }}</div>{% endif %}
+        {% if summary_eval.app_minus_lead %}
+        {% set full = summary_eval.app_minus_lead.app %}
+        {% set cut = summary_eval.app_minus_lead.app_first200 %}
+        <div class="finding glass">
+            <h3>Finding: closer in meaning, but too long</h3>
+            <p><em>Meaning:</em> our summaries are closer to what the speakers wrote than the baseline: BERTScore {{ '%+.3f'|format(full.bertscore.mean) }} (95% range {{ '%+.3f'|format(full.bertscore.ci95[0]) }} to {{ '%+.3f'|format(full.bertscore.ci95[1]) }}), better on {{ full.bertscore.app_wins }} of {{ summary_eval.n }} lectures. The range stays above zero, so this is unlikely to be luck.</p>
+            <p><em>Exact words:</em> on ROUGE they only tie with the first-200-words baseline. Speakers write their abstracts in their own words, so few exact words match any summary of the talk.</p>
+            <p><em>Length:</em> full summaries average {{ summary_eval.systems.app.words_mean|round|int }} words against {{ summary_eval.reference_words_mean|round|int }} in the abstracts. Cut to 200 words, they score better on every measure (meaning: better on {{ cut.bertscore.app_wins }} of {{ summary_eval.n }}). The next improvement is to shorten long summaries a second time.</p>
+        </div>
+        {% endif %}
         {% else %}
         <div class="finding glass">
             <p>The evaluation hasn't been run on this computer yet. Run <code>.venv\Scripts\python summary_eval\evaluate.py</code> (about an hour) and refresh this page.</p>
