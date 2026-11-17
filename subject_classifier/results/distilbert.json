@@ -1,0 +1,67 @@
+{
+  "source": "Kaggle run of train_distilbert.ipynb (GPU T4 x2, 17.0 min training); copied from the notebook's printed classification report",
+  "model": "distilbert-base-uncased",
+  "max_len": 512,
+  "chunks_per_lecture": 4,
+  "epochs": 4,
+  "learning_rate": 4e-05,
+  "valid_macro_f1": 0.8577,
+  "valid_by_epoch": [
+    {
+      "epoch": 1,
+      "macro_f1": 0.725,
+      "accuracy": 0.8441
+    },
+    {
+      "epoch": 2,
+      "macro_f1": 0.7653,
+      "accuracy": 0.9043
+    },
+    {
+      "epoch": 3,
+      "macro_f1": 0.8565,
+      "accuracy": 0.9483
+    },
+    {
+      "epoch": 4,
+      "macro_f1": 0.8577,
+      "accuracy": 0.9483
+    }
+  ],
+  "test": {
+    "accuracy": 0.9483,
+    "macro_f1": 0.8607,
+    "macro_precision": 0.814,
+    "macro_recall": 0.942,
+    "per_class_f1": {
+      "Computer Science": 0.974,
+      "Mathematics": 0.883,
+      "Chemistry": 0.928,
+      "Physics": 0.847,
+      "Information Science": 0.474,
+      "Linguistics": 1.0,
+      "Economics and Social Sciences": 0.88,
+      "Engineering": 0.9
+    },
+    "per_class_precision": {
+      "Computer Science": 0.995,
+      "Mathematics": 0.875,
+      "Chemistry": 0.957,
+      "Physics": 0.75,
+      "Information Science": 0.333,
+      "Linguistics": 1.0,
+      "Economics and Social Sciences": 0.786,
+      "Engineering": 0.818
+    },
+    "per_class_recall": {
+      "Computer Science": 0.954,
+      "Mathematics": 0.891,
+      "Chemistry": 0.9,
+      "Physics": 0.973,
+      "Information Science": 0.818,
+      "Linguistics": 1.0,
+      "Economics and Social Sciences": 1.0,
+      "Engineering": 1.0
+    }
+  }
+}
