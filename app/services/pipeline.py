@@ -41,8 +41,8 @@ def _transcript_from_file(summary_id, media_path):
         extract_audio(media_path, audio_path)
 
     update_summary(summary_id, status="transcribing")
-    from ..ai.whisper_service import transcribe_audio
-    return transcribe_audio(audio_path)
+    from ..ai.whisper_service import transcribe_multilingual
+    return transcribe_multilingual(audio_path)
 
 
 def _transcript_from_youtube(summary_id, url, upload_dir, has_custom_title):
@@ -51,7 +51,8 @@ def _transcript_from_youtube(summary_id, url, upload_dir, has_custom_title):
     data = process_youtube_video(url, upload_dir=upload_dir)
     if not has_custom_title and data.get("title"):
         update_summary(summary_id, title=data["title"][:200])
-    return data["transcript"]
+    return {"language": data["language"], "language_name": data["language_name"],
+            "original": data["transcript_original"], "english": data["transcript"]}
 
 
 def _classify(summary_id, transcript, job):
@@ -90,15 +91,24 @@ def folder_for_subject(user_id, subject):
 def _run(summary_id, job):
     try:
         if job["source_type"] == "youtube":
-            transcript = _transcript_from_youtube(
+            heard = _transcript_from_youtube(
                 summary_id, job["url"], job["upload_dir"], job["has_custom_title"])
         else:
-            transcript = _transcript_from_file(summary_id, job["media_path"])
+            heard = _transcript_from_file(summary_id, job["media_path"])
 
-        transcript = (transcript or "").strip()
+        # The summarizer reads English, so `transcript` holds the English text;
+        # for other languages the words as spoken go in `transcript_original`.
+        transcript = (heard["english"] or "").strip()
         if not transcript:
             raise RuntimeError("No speech was found in this recording.")
-        update_summary(summary_id, transcript=transcript)
+        is_english = heard["language"] == "en"
+        update_summary(
+            summary_id,
+            transcript=transcript,
+            transcript_original=None if is_english else heard["original"],
+            language=heard["language"],
+            language_name=heard["language_name"],
+        )
         _classify(summary_id, transcript, job)
 
         update_summary(summary_id, status="summarizing")

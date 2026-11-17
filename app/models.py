@@ -50,6 +50,9 @@ def create_tables():
             subject TEXT,
             subject_confidence REAL,
             subject_reasons TEXT,
+            transcript_original TEXT,
+            language TEXT NOT NULL DEFAULT 'en',
+            language_name TEXT,
             FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
             FOREIGN KEY (folder_id) REFERENCES folders (id) ON DELETE SET NULL
         )
@@ -65,6 +68,9 @@ def create_tables():
         ("subject", "TEXT"),
         ("subject_confidence", "REAL"),
         ("subject_reasons", "TEXT"),
+        ("transcript_original", "TEXT"),
+        ("language", "TEXT NOT NULL DEFAULT 'en'"),
+        ("language_name", "TEXT"),
     ):
         if column not in existing:
             conn.execute(f"ALTER TABLE summaries ADD COLUMN {column} {ddl}")

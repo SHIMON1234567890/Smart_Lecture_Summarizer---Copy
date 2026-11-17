@@ -518,8 +518,12 @@ def download_summary(summary_id):
         f"Date: {s['created_at']}\nStyle: {style}\n"
         f"Source: {s['source_url'] or s['source_type']}\n\n"
         f"SUMMARY\n-------\n{s['summary'] or '(not ready)'}\n\n"
-        f"TRANSCRIPT\n----------\n{s['transcript'] or '(not ready)'}\n"
+        f"TRANSCRIPT{' (English)' if s['transcript_original'] else ''}\n"
+        f"----------\n{s['transcript'] or '(not ready)'}\n"
     )
+    if s["transcript_original"]:
+        heading = f"TRANSCRIPT AS SPOKEN ({s['language_name'] or s['language']})"
+        body += f"\n{heading}\n{'-' * len(heading)}\n{s['transcript_original']}\n"
     filename = secure_filename(s["title"]) or "lecture"
     return Response(
         body,
