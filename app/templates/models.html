@@ -48,7 +48,7 @@
         <h2 id="clf-title" class="models__h2">Training the subject classifier</h2>
         <div class="models__grid">
             <div class="models__text">
-                <p><strong>Data.</strong> {{ '{:,}'.format(baseline.sizes.train + baseline.sizes.valid + baseline.sizes.test) }} real academic lectures from the TIB dataset, each with a transcript and a subject label. We kept lectures with exactly one subject from 8 subjects.</p>
+                <p><strong>Data.</strong> The TIB dataset has 9,103 real academic lectures, each with a transcript and a subject label. We used the {{ '{:,}'.format(baseline.sizes.train + baseline.sizes.valid + baseline.sizes.test) }} that have exactly one of 8 subjects, and capped Computer Science at 1,000 for training, because it is 80% of the data.</p>
                 <p><strong>Fair testing.</strong> The lectures were split 70 / 15 / 15: the models learn from the first part, settings are tuned on the second, and the scores below come from the last {{ '{:,}'.format(baseline.sizes.test) }} lectures, which the models never saw.</p>
                 <p><strong>Why not just accuracy?</strong> 85% of the test lectures are Computer Science, so a model that always answers “Computer Science” already scores 85%. <em>Macro-F1</em> scores every subject equally, so that trick gets 0.12.</p>
             </div>
@@ -108,7 +108,7 @@
         {% set names = {'lead_200': 'First 200 words of the transcript', 'app': 'Our summarizer (full summary)', 'app_first200': 'Our summarizer, first 200 words'} %}
         <div class="models__grid">
             <div class="models__text">
-                <p><strong>Test.</strong> {{ summary_eval.n }} lectures from the TIB test set (transcripts up to {{ '{:,}'.format(summary_eval.max_transcript_words or 0) }} words, {{ '{:,.0f}'.format(summary_eval.transcript_words_mean) }} on average). Each summary is compared with the abstract the speaker wrote ({{ summary_eval.reference_words_mean|round|int }} words on average).</p>
+                <p><strong>Test.</strong> {{ summary_eval.n }} lectures from the TIB test set ({% if summary_eval.max_transcript_words %}transcripts up to {{ '{:,}'.format(summary_eval.max_transcript_words) }} words, {% endif %}{{ '{:,.0f}'.format(summary_eval.transcript_words_mean) }} words on average). Each summary is compared with the abstract the speaker wrote ({{ summary_eval.reference_words_mean|round|int }} words on average).</p>
                 <p><strong>ROUGE</strong> counts shared words (ROUGE-1) and shared word pairs (ROUGE-2) with the abstract. <strong>BERTScore</strong> compares meaning, so different words with the same meaning still count.</p>
                 <p><strong>Baseline.</strong> “First 200 words” is the simplest possible summary. A summarizer should beat it to be worth running.</p>
             </div>
