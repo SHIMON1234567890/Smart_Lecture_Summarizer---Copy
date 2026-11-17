@@ -1,11 +1,10 @@
 Flask
-transformers
-torch
+werkzeug
 openai-whisper
+transformers<5  # v5 removed the "summarization" pipeline
+torch
 moviepy
 imageio-ffmpeg
-werkzeug
 youtube-transcript-api
 yt-dlp
-datasets
-
+datasets<5  # training scripts; v5 needs huggingface-hub 1.x, which transformers 4 rejects

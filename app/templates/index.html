@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+{% block body_class %}page-home{% endblock %}
+
+{% block home_url %}#top{% endblock %}
+{% block nav_links %}
+<a href="#how">How it works</a>
+<a href="#sample">Sample</a>
+<a href="#faq">FAQ</a>
+{% if current_user %}<a href="{{ url_for('main.dashboard') }}">Library</a>{% endif %}
+{% endblock %}
+
+{% block content %}
+{% set signed_in = current_user %}
+{% set cta_url = url_for('main.dashboard') if signed_in else url_for('main.register') %}
+
+<!-- ============ HERO ============ -->
+<section class="hero" id="top" aria-labelledby="hero-title">
+    <canvas class="stars stars--hero" data-stars="140" aria-hidden="true"></canvas>
+
+    <div class="hero__copy">
+        <h1 id="hero-title" class="hero__title reveal">Every Lecture,<br>Summarized in Minutes</h1>
+        <p class="hero__lede reveal">Upload a recorded lecture or paste a YouTube link. We transcribe every word with Whisper and condense it into notes in the style you revise from.</p>
+        <a class="btn btn--light btn--lg reveal" href="{{ cta_url }}">{{ 'Upload a Lecture' if signed_in else 'Sign Up & Summarize' }}</a>
+    </div>
+
+    <div class="blob blob--hero" data-blob aria-hidden="true">
+        <canvas></canvas>
+    </div>
+
+    <a class="glass-card glass-card--left float-a" href="#how">
+        <span class="glass-card__label">Transcription</span>
+        <span class="glass-card__arrow" aria-hidden="true">
+            <svg viewBox="0 0 16 16"><path d="M5 11 11 5M6 5h5v5" /></svg>
+        </span>
+        <strong class="glass-card__title">Whisper speech<br>recognition</strong>
+        <span class="glass-card__meta">small model</span>
+    </a>
+
+    <a class="glass-card glass-card--right float-b" href="#sample">
+        <span class="glass-card__label">Summary styles</span>
+        <span class="glass-card__arrow" aria-hidden="true">
+            <svg viewBox="0 0 16 16"><path d="M5 11 11 5M6 5h5v5" /></svg>
+        </span>
+        <strong class="glass-card__figure">5 <small>styles</small></strong>
+        <span class="glass-card__bar"><span style="--w: 62%"></span></span>
+    </a>
+</section>
+
+<!-- ============ HOW IT WORKS ============ -->
+<section class="section how" id="how" aria-labelledby="how-title">
+    <div class="section__head">
+        <h2 id="how-title" class="reveal">From recording to study notes</h2>
+        <p class="reveal">One upload starts a pipeline that runs on this server. You can leave the page and come back; progress is saved.</p>
+    </div>
+
+    <ol class="pipeline" data-pipeline>
+        <li class="pipeline__step reveal">
+            <span class="pipeline__dot" aria-hidden="true"></span>
+            <h3>Upload</h3>
+            <p>Drop in a video or audio recording, or paste a YouTube link.</p>
+            <span class="pipeline__tool">Flask</span>
+        </li>
+        <li class="pipeline__step reveal">
+            <span class="pipeline__dot" aria-hidden="true"></span>
+            <h3>Extract audio</h3>
+            <p>The soundtrack is split from the video and saved as an MP3. YouTube videos use their captions when they have them.</p>
+            <span class="pipeline__tool">MoviePy + FFmpeg</span>
+        </li>
+        <li class="pipeline__step reveal">
+            <span class="pipeline__dot" aria-hidden="true"></span>
+            <h3>Transcribe</h3>
+            <p>Every spoken word becomes text, with punctuation, in the speaker's language.</p>
+            <span class="pipeline__tool">OpenAI Whisper</span>
+        </li>
+        <li class="pipeline__step reveal">
+            <span class="pipeline__dot" aria-hidden="true"></span>
+            <h3>Summarize</h3>
+            <p>The transcript is condensed in parts, then shaped into the style you picked: bullet points, study notes, exam prep and more.</p>
+            <span class="pipeline__tool">BART large CNN</span>
+        </li>
+    </ol>
+</section>
+
+<!-- ============ SAMPLE (live thing) ============ -->
+<section class="section sample" id="sample" aria-labelledby="sample-title">
+    <div class="sample__intro">
+        <h2 id="sample-title" class="reveal">Ten minutes of talk, one paragraph to read</h2>
+        <p class="reveal">Switch between what was said and what you keep. This is a sample lecture on photosynthesis, shortened to fit the page.</p>
+
+        <dl class="sample__stats reveal" data-sample-stats>
+            <div><dt>Words</dt><dd data-stat="words">–</dd></div>
+            <div><dt>Reading time</dt><dd data-stat="time">–</dd></div>
+            <div><dt>Kept</dt><dd data-stat="kept">–</dd></div>
+        </dl>
+    </div>
+
+    <div class="sample__panel glass reveal" data-sample>
+        <div class="toggle" role="tablist" aria-label="Sample view">
+            <button role="tab" id="tab-transcript" aria-controls="panel-transcript" aria-selected="true" data-view="transcript">Transcript</button>
+            <button role="tab" id="tab-summary" aria-controls="panel-summary" aria-selected="false" data-view="summary" tabindex="-1">Summary</button>
+            <span class="toggle__thumb" aria-hidden="true"></span>
+        </div>
+
+        <div class="sample__text" id="panel-transcript" role="tabpanel" aria-labelledby="tab-transcript" data-panel="transcript">
+            <p>Okay, so let's get started. Today we're talking about photosynthesis, which is, honestly, the reason almost everything on this planet is alive. So at the simplest level, photosynthesis is how plants, algae and some bacteria take light energy and store it as chemical energy, in sugar. The overall equation, which you've probably seen before, is six carbon dioxide plus six water, with light, gives you one glucose and six oxygen. Now, where does this happen? In the chloroplast. Inside the chloroplast you've got these stacks of membranes called thylakoids, and around them a fluid called the stroma. Keep those two words in mind, because the two stages of photosynthesis happen in those two places. The first stage is the light-dependent reactions. These happen in the thylakoid membranes. Chlorophyll absorbs light, mostly red and blue, which is why leaves look green to us, they reflect the green. That energy splits water molecules, and that's actually where the oxygen we breathe comes from, it comes from the water, not the carbon dioxide, people get that wrong on the exam every year. The energy is captured in two molecules, ATP and NADPH. Then the second stage, the Calvin cycle, happens in the stroma. It doesn't need light directly, but it does need the ATP and NADPH from stage one. An enzyme called RuBisCO fixes carbon dioxide onto a five-carbon sugar, and after a series of steps you get G3P, which the plant uses to build glucose and other sugars. So, to sum up: light reactions make energy carriers and release oxygen, the Calvin cycle spends those carriers to turn carbon dioxide into sugar. Next week we'll look at what limits the rate of this whole process.</p>
+        </div>
+        <div class="sample__text" id="panel-summary" role="tabpanel" aria-labelledby="tab-summary" data-panel="summary" hidden>
+            <p>Photosynthesis is how plants, algae and some bacteria store light energy as chemical energy in sugar. It happens in the chloroplast in two stages. The light-dependent reactions in the thylakoid membranes use light absorbed by chlorophyll to split water, releasing oxygen and producing ATP and NADPH. The Calvin cycle in the stroma uses that ATP and NADPH, with the enzyme RuBisCO, to fix carbon dioxide into G3P, which is built into glucose.</p>
+        </div>
+    </div>
+</section>
+
+<!-- ============ WHAT YOU GET ============ -->
+<section class="section get" aria-labelledby="get-title">
+    <div class="get__copy">
+        <h2 id="get-title" class="reveal">Everything a lecture leaves behind</h2>
+        <ul class="get__list">
+            <li class="reveal"><strong>A summary in the style you need.</strong> Key-point bullets, study notes, a two-line overview, exam revision or action items.</li>
+            <li class="reveal"><strong>In your language.</strong> Get the summary in one of 14 languages, or translate it later.</li>
+            <li class="reveal"><strong>The full transcript.</strong> Search it with your browser, quote from it, check what was really said.</li>
+            <li class="reveal"><strong>A plain-text download.</strong> Summary and transcript in one .txt file for your notes app.</li>
+            <li class="reveal"><strong>Folders for every course.</strong> Every summary stays in your account, filed where you put it, until you delete it.</li>
+            <li class="reveal"><strong>Live progress.</strong> Watch each stage finish, or close the tab and come back later.</li>
+        </ul>
+    </div>
+
+    <figure class="get__ui reveal" data-ui aria-label="Preview of a finished lecture page">
+        <div class="mock">
+            <div class="mock__bar">
+                <span class="status status--done">Ready</span>
+                <span class="mock__title">Intro to Photosynthesis</span>
+            </div>
+            <div class="mock__stats">
+                <div><span>Transcript</span><strong>283</strong></div>
+                <div><span>Summary</span><strong>72</strong></div>
+                <div><span>Shorter by</span><strong>75%</strong></div>
+            </div>
+            <div class="mock__summary">
+                <span>Summary</span>
+                <p>Photosynthesis stores light energy as sugar in two stages: light reactions in the thylakoids make ATP and NADPH and release oxygen; the Calvin cycle in the stroma fixes CO₂ into G3P…</p>
+            </div>
+            <div class="mock__actions">
+                <span class="btn btn--light btn--sm">Copy summary</span>
+                <span class="btn btn--dark btn--sm">Download .txt</span>
+            </div>
+        </div>
+        <figcaption>The sample lecture above, as a finished result. Figures are worked out from the transcript.</figcaption>
+    </figure>
+</section>
+
+<!-- ============ FAQ ============ -->
+<section class="section faq" id="faq" aria-labelledby="faq-title">
+    <h2 id="faq-title" class="reveal">Questions</h2>
+    <div class="faq__list">
+        <details class="reveal">
+            <summary>What can I upload?</summary>
+            <p>Video (MP4, MOV, MKV, WEBM, AVI, M4V) or audio (MP3, WAV, M4A, OGG), up to 2 GB per file, or a YouTube link. Any recording with clear speech works, including phone videos and screen recordings.</p>
+        </details>
+        <details class="reveal">
+            <summary>How long does processing take?</summary>
+            <p>It depends on the length of the lecture and the machine running the app. On a laptop CPU, expect it to take about as long as the video itself; with a GPU it is several times faster. The first run also downloads the models.</p>
+        </details>
+        <details class="reveal">
+            <summary>Is my lecture sent to a third-party service?</summary>
+            <p>Your recording isn't: Whisper and BART run on the server that hosts this app, and the file stays in its uploads folder until you delete the summary. Two things do go online. Translation sends the summary text to Google Translate, and YouTube links are fetched from YouTube.</p>
+        </details>
+        <details class="reveal">
+            <summary>Does it work for lectures that aren't in English?</summary>
+            <p>Whisper transcribes dozens of languages. The BART summarizer was trained on English news, so summaries are most reliable for English lectures. You can still have the summary translated into 14 languages.</p>
+        </details>
+        <details class="reveal">
+            <summary>What happens with very long lectures?</summary>
+            <p>The transcript is split into parts of about 500 words and each part is summarized. The partial summaries are then arranged into the style you picked.</p>
+        </details>
+    </div>
+</section>
+
+<!-- ============ CTA ============ -->
+<section class="cta" aria-labelledby="cta-title">
+    <div class="blob blob--cta" data-blob data-blob-seed="2.4" aria-hidden="true"><canvas></canvas></div>
+    <div class="cta__copy">
+        <h2 id="cta-title" class="reveal">Your next lecture, already summarized</h2>
+        <p class="reveal">Create a free account and add your first recording or YouTube link.</p>
+        <a class="btn btn--light btn--lg reveal" href="{{ cta_url }}">{{ 'Go to Your Library' if signed_in else 'Create an Account' }}</a>
+    </div>
+</section>
+{% endblock %}
+
+{% block footer %}
+<footer class="footer">
+    <p class="footer__name">Smart Lecture Summarizer</p>
+    <div class="footer__row">
+        <nav aria-label="Footer">
+            <a href="#how">How it works</a>
+            <a href="#sample">Sample</a>
+            <a href="#faq">FAQ</a>
+            <a href="{{ url_for('main.login') }}">Login</a>
+        </nav>
+        <span>Whisper transcription · BART summaries · © 2026</span>
+    </div>
+</footer>
+{% endblock %}

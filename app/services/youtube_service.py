@@ -1,6 +1,7 @@
 import os
 import re
 import json
+import urllib.parse
 import urllib.request
 from app.ai.whisper_service import transcribe_audio
 
@@ -32,7 +33,7 @@ def fetch_youtube_title(video_url):
     Fetches the video title via YouTube's official oEmbed API without needing API keys.
     """
     try:
-        oembed_url = f"https://www.youtube.com/oembed?url={video_url}&format=json"
+        oembed_url = "https://www.youtube.com/oembed?format=json&url=" + urllib.parse.quote(video_url, safe="")
         req = urllib.request.Request(
             oembed_url,
             headers={"User-Agent": "Mozilla/5.0"}
@@ -44,6 +45,11 @@ def fetch_youtube_title(video_url):
         return "YouTube Lecture"
 
 
+def _snippet_text(entry):
+    # youtube-transcript-api < 1.0 returns dicts, >= 1.0 returns snippet objects.
+    return entry["text"] if isinstance(entry, dict) else entry.text
+
+
 def get_youtube_transcript_from_subtitles(video_id):
     """
     Attempts to fetch official or auto-generated transcripts using youtube_transcript_api.
@@ -51,30 +57,35 @@ def get_youtube_transcript_from_subtitles(video_id):
     if not YouTubeTranscriptApi:
         return None
 
+    languages = ["en", "en-US", "en-GB"]
+    legacy = hasattr(YouTubeTranscriptApi, "get_transcript")  # versions before 1.0
+    api = None if legacy else YouTubeTranscriptApi()
+
     try:
-        # Try fetching English or auto-generated transcripts
-        transcript_list = YouTubeTranscriptApi.get_transcript(video_id, languages=["en", "en-US", "en-GB"])
-        full_text = " ".join([entry["text"] for entry in transcript_list])
-        return full_text.strip()
+        entries = (YouTubeTranscriptApi.get_transcript(video_id, languages=languages)
+                   if legacy else api.fetch(video_id, languages=languages))
+        return " ".join(_snippet_text(e) for e in entries).strip()
     except Exception as e:
-        print(f"Subtitle extraction not available for {video_id}: {e}")
-        try:
-            # Fallback to any available language
-            transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
-            for transcript in transcript_list:
-                data = transcript.fetch()
-                return " ".join([entry["text"] for entry in data]).strip()
-        except Exception:
-            pass
+        print(f"English subtitles not available for {video_id}: {e}")
+
+    try:
+        # Fallback to any available language
+        transcripts = (YouTubeTranscriptApi.list_transcripts(video_id)
+                       if legacy else api.list(video_id))
+        for transcript in transcripts:
+            return " ".join(_snippet_text(e) for e in transcript.fetch()).strip()
+    except Exception as e:
+        print(f"No subtitles available for {video_id}: {e}")
     return None
 
 
 def download_youtube_audio_and_transcribe(video_url, video_id, upload_dir="uploads"):
     """
     Fallback method: downloads the audio using yt-dlp and runs Whisper transcription.
+    The audio is kept in its original format (Whisper decodes it with FFmpeg), so
+    no separate ffprobe install is needed.
     """
     os.makedirs(upload_dir, exist_ok=True)
-    audio_path = os.path.join(upload_dir, f"yt_{video_id}.mp3")
 
     try:
         import yt_dlp
@@ -82,17 +93,14 @@ def download_youtube_audio_and_transcribe(video_url, video_id, upload_dir="uploa
         ydl_opts = {
             "format": "bestaudio/best",
             "outtmpl": os.path.join(upload_dir, f"yt_{video_id}.%(ext)s"),
-            "postprocessors": [{
-                "key": "FFmpegExtractAudio",
-                "preferredcodec": "mp3",
-                "preferredquality": "192",
-            }],
             "quiet": True,
-            "no_warnings": True
+            "no_warnings": True,
+            "noplaylist": True,
         }
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            ydl.download([video_url])
+            info = ydl.extract_info(video_url, download=True)
+            audio_path = ydl.prepare_filename(info)
 
         if os.path.exists(audio_path):
             return transcribe_audio(audio_path)
@@ -100,8 +108,8 @@ def download_youtube_audio_and_transcribe(video_url, video_id, upload_dir="uploa
         print(f"yt-dlp download failed: {e}")
 
     raise RuntimeError(
-        "Could not extract transcript from YouTube video. "
-        "Ensure subtitles are enabled on the video, or yt-dlp is installed."
+        "Could not get a transcript for this YouTube video. It has no captions, "
+        "and its audio could not be downloaded."
     )
 
 

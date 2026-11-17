@@ -1,204 +1,129 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ summary.title }} - Summary</title>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-        body { background-color: #f4f6f9; color: #1e293b; line-height: 1.6; }
-        .navbar { background: #1e293b; color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
-        .navbar h1 { font-size: 20px; font-weight: 600; }
-        .nav-links a { color: #cbd5e1; text-decoration: none; margin-left: 20px; font-size: 14px; }
-        .nav-links a:hover { color: white; }
-        .container { max-width: 900px; margin: 30px auto; padding: 0 20px; }
-        .back-link { display: inline-block; margin-bottom: 20px; color: #64748b; text-decoration: none; font-size: 14px; }
-        .back-link:hover { color: #2563eb; }
-        .card { background: white; border-radius: 10px; border: 1px solid #e2e8f0; padding: 30px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); margin-bottom: 25px; }
-        .meta-header { border-bottom: 1px solid #e2e8f0; padding-bottom: 20px; margin-bottom: 20px; }
-        .title { font-size: 24px; font-weight: 700; color: #0f172a; margin-bottom: 10px; }
-        .tags { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; font-size: 13px; color: #64748b; }
-        .badge { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 500; }
-        .badge-yt { background: #fee2e2; color: #b91c1c; }
-        .badge-file { background: #e0f2fe; color: #0369a1; }
-        .badge-style { background: #f3e8ff; color: #7e22ce; }
-        .badge-folder { background: #fef3c7; color: #92400e; }
-        
-        /* Translation Bar */
-        .translation-bar { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px 18px; margin: 20px 0; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
-        .lang-select { padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; background: white; color: #1e293b; outline: none; }
-        
-        .btn-group { display: flex; gap: 10px; margin-top: 15px; }
-        .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: 500; cursor: pointer; border: 1px solid #cbd5e1; background: white; color: #334155; transition: all 0.2s; }
-        .btn:hover { background: #f8fafc; }
-        .btn-primary { background: #2563eb; color: white; border: none; }
-        .btn-primary:hover { background: #1d4ed8; }
-        .btn-success { background: #10b981; color: white; border: none; }
-        .btn-success:hover { background: #059669; }
-        
-        .summary-box { background: #f8fafc; border-left: 4px solid #2563eb; padding: 25px; border-radius: 0 8px 8px 0; font-size: 15px; line-height: 1.8; white-space: pre-wrap; margin-bottom: 25px; }
-        .transcript-box { max-height: 350px; overflow-y: auto; background: #fafafa; border: 1px solid #e2e8f0; border-radius: 6px; padding: 18px; font-size: 13px; color: #475569; white-space: pre-wrap; line-height: 1.6; }
-        details summary { cursor: pointer; font-weight: 600; color: #334155; padding: 8px 0; }
-    </style>
-</head>
-<body>
+{% extends "base.html" %}
+{% block title %}{{ summary.title }} · Smart Lecture Summarizer{% endblock %}
+{% block body_class %}page-app{% endblock %}
 
-    <nav class="navbar">
-        <h1>📚 Smart Lecture Summarizer</h1>
-        <div class="nav-links">
-            <a href="/folders">📁 Folders</a>
-            <a href="/upload">✨ Create Summary</a>
-            <a href="/logout">🚪 Logout</a>
-        </div>
-    </nav>
+{% block content %}
+{% set stage_names = {'extracting': 'Extract audio', 'transcribing': ('Get transcript' if summary.source_type == 'youtube' else 'Transcribe'), 'summarizing': 'Summarize', 'translating': 'Translate', 'done': 'Ready'} %}
+{% set order = ['queued'] + stages %}
+{% set style_name = summary_types[summary.summary_type].name if summary.summary_type in summary_types else summary.summary_type %}
+<section class="app-head" aria-labelledby="sum-page-title">
+    <div>
+        {% if summary.folder_id %}
+        <a class="back" href="{{ url_for('main.view_folder', folder_id=summary.folder_id) }}">← {{ summary.folder_name or 'Folder' }}</a>
+        {% else %}
+        <a class="back" href="{{ url_for('main.dashboard') }}">← Library</a>
+        {% endif %}
+        <h1 id="sum-page-title">{{ summary.title }}</h1>
+        <p class="tags tags--head">
+            {% if summary.source_type == 'youtube' %}
+            <a class="tag" href="{{ summary.source_url }}" target="_blank" rel="noopener">YouTube ↗</a>
+            {% else %}
+            <span class="tag" title="Uploaded file">{{ summary.source_url or 'Uploaded file' }}</span>
+            {% endif %}
+            <span class="tag">{{ style_name }}</span>
+            {% if summary.target_lang and summary.target_lang != 'en' %}<span class="tag">{{ supported_languages.get(summary.target_lang, summary.target_lang) }}</span>{% endif %}
+            <time datetime="{{ summary.created_at }}">{{ (summary.created_at or '')[:16] }} UTC</time>
+        </p>
+    </div>
+    <span class="status status--{{ summary.status }} status--lg" data-status-badge>{{ status_labels.get(summary.status, summary.status) }}</span>
+</section>
 
-    <div class="container">
-        
-        <a href="{{ '/folder/' ~ summary.folder_id if summary.folder_id else '/folders' }}" class="back-link">← Back to {{ summary.folder_name or 'Folders' }}</a>
+{% if summary.status == 'done' %}
+    {% set t_words = (summary.transcript or '').split()|length %}
+    {% set s_words = (summary.summary or '').split()|length %}
+    {% set saved = (100 - (s_words * 100 / t_words))|round|int if t_words else 0 %}
 
-        <div class="card">
-            
-            <div class="meta-header">
-                <h2 class="title">{{ summary.title }}</h2>
-                <div class="tags">
-                    <span class="badge badge-folder">📂 {{ summary.folder_name or 'General' }}</span>
-                    {% if summary.source_type == 'youtube' %}
-                        <a href="{{ summary.source_url }}" target="_blank" class="badge badge-yt" style="text-decoration: none;">▶ YouTube Link</a>
-                    {% else %}
-                        <span class="badge badge-file">📁 {{ summary.source_url or 'Uploaded File' }}</span>
-                    {% endif %}
-                    <span class="badge badge-style">{{ summary_types[summary.summary_type].name if summary.summary_type in summary_types else summary.summary_type }}</span>
-                    <span>• Generated {{ summary.created_at[:16] if summary.created_at else '' }}</span>
-                </div>
-
-                <div class="btn-group">
-                    <button class="btn" onclick="copySummary()">📋 Copy Summary</button>
-                    <button class="btn" onclick="downloadSummary()">💾 Download TXT</button>
+    <div class="result">
+        <article class="summary glass" aria-labelledby="sum-title" data-translate="{{ summary.id }}">
+            <div class="summary__head">
+                <h2 id="sum-title">Summary</h2>
+                <div class="summary__actions">
+                    <button class="btn btn--light btn--sm" type="button" data-copy="#summary-text">Copy summary</button>
+                    <a class="btn btn--dark btn--sm" href="{{ url_for('main.download_summary', summary_id=summary.id) }}">Download .txt</a>
                 </div>
             </div>
 
-            <!-- Language Translation Bar -->
-            <div class="translation-bar">
-                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                    <span style="font-weight: 600; font-size: 13px; color: #334155;">🌐 Change Language:</span>
-                    <select id="targetLangSelect" class="lang-select">
-                        {% for code, name in supported_languages.items() %}
-                        <option value="{{ code }}" {% if code == 'es' %}selected{% endif %}>{{ name }}</option>
-                        {% endfor %}
-                    </select>
-                    <button class="btn btn-primary" id="translateBtn" onclick="translateSummary()">
-                        Translate Summary
-                    </button>
-                    <button class="btn btn-success" id="saveTranslationBtn" style="display: none;" onclick="saveCurrentTranslation()">
-                        💾 Save Translation
-                    </button>
-                </div>
-                <span id="translateStatus" style="font-size: 13px; color: #64748b; font-weight: 500;"></span>
+            <div class="translate">
+                <label class="sr-only" for="lang">Translate to</label>
+                <select id="lang" data-translate-lang>
+                    {% for code, name in supported_languages.items() %}
+                    <option value="{{ code }}" {% if code == ('en' if summary.target_lang != 'en' else 'es') %}selected{% endif %}>{{ name }}</option>
+                    {% endfor %}
+                </select>
+                <button class="btn btn--dark btn--sm" type="button" data-translate-go>Translate</button>
+                <button class="btn btn--light btn--sm" type="button" data-translate-save hidden>Save translation</button>
+                <button class="link-btn link-btn--quiet" type="button" data-translate-reset hidden>Show original</button>
+                <span class="translate__status" data-translate-status aria-live="polite"></span>
             </div>
 
-            <h3 style="font-size: 18px; margin-bottom: 12px; color: #0f172a;">📝 Lecture Summary</h3>
-            <div class="summary-box" id="summaryText">{{ summary.summary }}</div>
+            <div class="summary__body" id="summary-text">{{ summary.summary|render_summary }}</div>
+        </article>
 
-            <details>
-                <summary>📄 View Full Lecture Transcript</summary>
-                <div class="transcript-box" id="transcriptText">{{ summary.transcript }}</div>
-            </details>
+        <aside class="stats" aria-label="Lecture figures">
+            <div class="stat glass">
+                <span>Shorter by</span>
+                <strong>{{ saved }}%</strong>
+                <span class="glass-card__bar"><span style="--w: {{ saved }}%"></span></span>
+            </div>
+            <div class="stat glass">
+                <span>Transcript</span>
+                <strong>{{ '{:,}'.format(t_words) }} <small>words</small></strong>
+            </div>
+            <div class="stat glass">
+                <span>Summary</span>
+                <strong>{{ '{:,}'.format(s_words) }} <small>words</small></strong>
+            </div>
+            <div class="stat glass">
+                <span>Reading time saved</span>
+                <strong>{{ ((t_words - s_words) / 230)|round(0, 'ceil')|int if t_words > s_words else 0 }} <small>min</small></strong>
+            </div>
+        </aside>
 
-        </div>
-
+        <section class="transcript glass" aria-labelledby="tr-title">
+            <div class="summary__head">
+                <h2 id="tr-title">Transcript</h2>
+                <button class="btn btn--dark btn--sm" type="button" data-copy="#transcript-text">Copy transcript</button>
+            </div>
+            <div class="transcript__text" id="transcript-text" tabindex="0">{{ summary.transcript }}</div>
+        </section>
     </div>
 
-    <script>
-        let currentTranslationText = "";
-        let currentLangCode = "";
+{% elif summary.status == 'failed' %}
+    <div class="failed glass" role="alert">
+        <h2>We couldn't finish this lecture</h2>
+        <p class="failed__error">{{ summary.error or 'Unknown error.' }}</p>
+        {% if summary.transcript %}
+        <details>
+            <summary>Show the transcript that was produced</summary>
+            <div class="transcript__text">{{ summary.transcript }}</div>
+        </details>
+        {% endif %}
+        <a class="btn btn--light" href="{{ url_for('main.upload', folder_id=summary.folder_id) }}">Try again</a>
+    </div>
 
-        async function translateSummary() {
-            const langSelect = document.getElementById("targetLangSelect");
-            const targetLang = langSelect.value;
-            const langName = langSelect.options[langSelect.selectedIndex].text;
-            const summaryBox = document.getElementById("summaryText");
-            const statusSpan = document.getElementById("translateStatus");
-            const translateBtn = document.getElementById("translateBtn");
+{% else %}
+    {% set current = order.index(summary.status) if summary.status in order else 0 %}
+    <div class="working" data-working="{{ url_for('main.summary_status', summary_id=summary.id) }}" data-order='{{ order|tojson }}'>
+        <div class="blob blob--working" data-blob data-blob-seed="0.7" aria-hidden="true"><canvas></canvas></div>
 
-            translateBtn.disabled = true;
-            statusSpan.innerText = `Translating into ${langName}...`;
+        <div class="working__copy">
+            <h2>Summarizing your lecture</h2>
+            <p>You can leave this page. Processing continues on the server and the result will be waiting in your library.</p>
+            <p class="working__live" aria-live="polite" data-working-label>{{ status_labels.get(summary.status, summary.status) }}…</p>
+        </div>
 
-            try {
-                const response = await fetch('/api/translate', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        text: summaryBox.innerText,
-                        target_lang: targetLang,
-                        summary_id: {{ summary.id }},
-                        save: false
-                    })
-                });
+        <ol class="stages" data-stages>
+            {% for key in stages %}
+            {% set idx = order.index(key) %}
+            <li class="stage {% if idx < current %}is-done{% elif idx == current %}is-active{% endif %}" data-stage="{{ key }}">
+                <span class="stage__dot" aria-hidden="true"></span>{{ stage_names[key] }}
+            </li>
+            {% endfor %}
+        </ol>
+    </div>
+{% endif %}
 
-                const data = await response.json();
-                if (data.success) {
-                    summaryBox.innerText = data.translated_text;
-                    currentTranslationText = data.translated_text;
-                    currentLangCode = targetLang;
-                    statusSpan.innerText = `✓ Translated to ${data.lang_name}`;
-                    document.getElementById("saveTranslationBtn").style.display = "inline-flex";
-                } else {
-                    statusSpan.innerText = "Translation error: " + (data.error || "Failed");
-                }
-            } catch (err) {
-                statusSpan.innerText = "Error connecting to translation service.";
-            } finally {
-                translateBtn.disabled = false;
-            }
-        }
-
-        async function saveCurrentTranslation() {
-            if (!currentTranslationText) return;
-            const statusSpan = document.getElementById("translateStatus");
-            statusSpan.innerText = "Saving translated summary...";
-
-            try {
-                const response = await fetch('/api/translate', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        text: currentTranslationText,
-                        target_lang: currentLangCode,
-                        summary_id: {{ summary.id }},
-                        save: true
-                    })
-                });
-                const data = await response.json();
-                if (data.success) {
-                    statusSpan.innerText = "✓ Saved translation permanently to folder!";
-                    document.getElementById("saveTranslationBtn").style.display = "none";
-                }
-            } catch (err) {
-                statusSpan.innerText = "Failed to save.";
-            }
-        }
-
-        function copySummary() {
-            const text = document.getElementById("summaryText").innerText;
-            navigator.clipboard.writeText(text).then(() => {
-                alert("Summary copied to clipboard!");
-            });
-        }
-
-        function downloadSummary() {
-            const title = "{{ summary.title }}".replace(/[^a-z0-9]/gi, '_').toLowerCase();
-            const text = "TITLE: {{ summary.title }}\nDATE: {{ summary.created_at }}\nSTYLE: {{ summary.summary_type }}\n\n--- SUMMARY ---\n" + 
-                         document.getElementById("summaryText").innerText + 
-                         "\n\n--- TRANSCRIPT ---\n" + 
-                         document.getElementById("transcriptText").innerText;
-            
-            const blob = new Blob([text], { type: "text/plain" });
-            const anchor = document.createElement("a");
-            anchor.download = title + "_summary.txt";
-            anchor.href = window.URL.createObjectURL(blob);
-            anchor.click();
-        }
-    </script>
-
-</body>
-</html>
+<form class="danger" method="POST" action="{{ url_for('main.delete_summary', summary_id=summary.id) }}" data-confirm="Delete this summary{{ ' and its uploaded file' if summary.media_filename else '' }}? This can't be undone.">
+    <button class="link-btn" type="submit">Delete summary</button>
+</form>
+{% endblock %}

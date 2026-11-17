@@ -1,0 +1,23 @@
+{# One summary in a list. Needs: s, show_folder (optional). #}
+<li>
+    <a class="lecture-row" href="{{ url_for('main.view_summary', summary_id=s.id) }}"
+       {% if s.status not in ('done', 'failed') %}data-poll="{{ url_for('main.summary_status', summary_id=s.id) }}"{% endif %}>
+        <span class="lecture-row__main">
+            <strong>{{ s.title }}</strong>
+            <span class="tags">
+                <span class="tag">{{ 'YouTube' if s.source_type == 'youtube' else 'Upload' }}</span>
+                <span class="tag">{{ summary_types[s.summary_type].name if s.summary_type in summary_types else s.summary_type }}</span>
+                {% if show_folder and s.folder_name %}<span class="tag tag--folder">{{ s.folder_name }}</span>{% endif %}
+            </span>
+            <span class="lecture-row__preview">
+                {% if s.status == 'done' and s.summary %}{{ s.summary|replace('#', '')|replace('*', '')|replace('•', '')|truncate(140) }}
+                {% elif s.status == 'failed' %}Processing failed. Open for details.
+                {% else %}Working on it. This page updates by itself.{% endif %}
+            </span>
+        </span>
+        <span class="lecture-row__side">
+            <span class="status status--{{ s.status }}" data-status>{{ status_labels.get(s.status, s.status) }}</span>
+            <time datetime="{{ s.created_at }}">{{ (s.created_at or '')[:10] }}</time>
+        </span>
+    </a>
+</li>

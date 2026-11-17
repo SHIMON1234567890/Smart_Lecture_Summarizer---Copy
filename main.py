@@ -5,6 +5,7 @@ import subprocess
 # Auto-detect and switch to the virtual environment if running with global/un-activated Python
 script_dir = os.path.dirname(os.path.abspath(__file__))
 candidate_venvs = [
+    os.path.join(script_dir, ".venv", "Scripts", "python.exe"),
     os.path.join(script_dir, "venv", "Scripts", "python.exe"),
     r"C:\Users\Shimon\OneDrive\Desktop\Smart_Lecture_Summarizer - Copy\venv\Scripts\python.exe",
 ]

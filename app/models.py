@@ -30,6 +30,7 @@ def create_tables():
         )
     """)
 
+    # status: queued -> extracting -> transcribing -> summarizing -> translating -> done | failed
     conn.execute("""
         CREATE TABLE IF NOT EXISTS summaries (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -42,10 +43,47 @@ def create_tables():
             transcript TEXT NOT NULL,
             summary TEXT NOT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            status TEXT NOT NULL DEFAULT 'done',
+            error TEXT,
+            target_lang TEXT NOT NULL DEFAULT 'en',
+            media_filename TEXT,
             FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
             FOREIGN KEY (folder_id) REFERENCES folders (id) ON DELETE SET NULL
         )
     """)
 
+    # Databases created before background processing lack these columns.
+    existing = {row["name"] for row in conn.execute("PRAGMA table_info(summaries)")}
+    for column, ddl in (
+        ("status", "TEXT NOT NULL DEFAULT 'done'"),
+        ("error", "TEXT"),
+        ("target_lang", "TEXT NOT NULL DEFAULT 'en'"),
+        ("media_filename", "TEXT"),
+    ):
+        if column not in existing:
+            conn.execute(f"ALTER TABLE summaries ADD COLUMN {column} {ddl}")
+
+    # Jobs run in a thread of this process, so any job still "in progress" at
+    # startup was cut off when the server last stopped.
+    conn.execute("""
+        UPDATE summaries
+        SET status = 'failed',
+            error = 'Processing stopped because the server was restarted. Delete this and add the lecture again.'
+        WHERE status NOT IN ('done', 'failed')
+    """)
+
     conn.commit()
-    conn.close()
+    conn.close()
+
+
+def update_summary(summary_id, **fields):
+    if not fields:
+        return
+    columns = ", ".join(f"{name} = ?" for name in fields)
+    conn = get_db()
+    conn.execute(
+        f"UPDATE summaries SET {columns} WHERE id = ?",
+        (*fields.values(), summary_id),
+    )
+    conn.commit()
+    conn.close()

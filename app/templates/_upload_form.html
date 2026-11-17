@@ -1,0 +1,81 @@
+{# New-summary form. Needs: folders, selected_folder_id (optional). #}
+<form class="upload glass" id="new" method="POST" action="{{ url_for('main.upload') }}"
+      enctype="multipart/form-data" data-upload>
+    <h2>New summary</h2>
+
+    <div class="seg" role="tablist" aria-label="Lecture source">
+        <button type="button" role="tab" aria-selected="true" data-source="file">Upload a file</button>
+        <button type="button" role="tab" aria-selected="false" data-source="youtube" tabindex="-1">YouTube link</button>
+    </div>
+    <input type="hidden" name="source_mode" value="file" data-source-input>
+
+    <div data-source-panel="file">
+        <label class="drop" data-drop>
+            <input type="file" name="video" accept="video/*,audio/*,.mkv,.m4a" required aria-describedby="drop-hint">
+            <span class="drop__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M12 16V4m0 0-5 5m5-5 5 5M4 20h16"/></svg>
+            </span>
+            <span class="drop__text" data-drop-text>Drop a video or audio file, or <u>browse</u></span>
+            <small id="drop-hint">MP4, MOV, MKV, WEBM, AVI, M4V, MP3, WAV, M4A or OGG · up to 2 GB</small>
+        </label>
+    </div>
+
+    <div data-source-panel="youtube" hidden>
+        <label class="field">
+            <span>YouTube link</span>
+            <input type="url" name="youtube_url" placeholder="https://www.youtube.com/watch?v=…" disabled
+                   aria-describedby="yt-hint">
+            <small id="yt-hint">Uses the video's captions when it has them; otherwise the audio is transcribed.</small>
+        </label>
+    </div>
+
+    <label class="field">
+        <span>Title <em>(optional)</em></span>
+        <input type="text" name="custom_title" maxlength="200" placeholder="e.g. Week 4 · Thermodynamics">
+    </label>
+
+    <label class="field">
+        <span>Summary style</span>
+        <select name="summary_type" data-style-select aria-describedby="style-hint">
+            {% for key, style in summary_types.items() %}
+            <option value="{{ key }}" data-description="{{ style.description }}" {% if loop.first %}selected{% endif %}>{{ style.name }}</option>
+            {% endfor %}
+        </select>
+        <small id="style-hint" data-style-hint>{{ (summary_types.values()|first).description }}</small>
+    </label>
+
+    <div class="field-row">
+        <label class="field">
+            <span>Language</span>
+            <select name="target_lang">
+                {% for code, name in supported_languages.items() %}
+                <option value="{{ code }}" {% if code == 'en' %}selected{% endif %}>{{ name }}</option>
+                {% endfor %}
+            </select>
+        </label>
+
+        <label class="field">
+            <span>Folder</span>
+            <select name="folder_id" data-folder-select>
+                {% for f in folders %}
+                <option value="{{ f.id }}" {% if selected_folder_id == f.id %}selected{% endif %}>{{ f.name }}</option>
+                {% endfor %}
+            </select>
+        </label>
+    </div>
+
+    <details class="newfolder" data-newfolder>
+        <summary>Or put it in a new folder</summary>
+        <label class="field">
+            <span class="sr-only">New folder name</span>
+            <input type="text" name="new_folder_name" maxlength="80" placeholder="e.g. Biology 101">
+        </label>
+    </details>
+
+    <div class="progress" data-progress hidden>
+        <span class="progress__bar"><span data-progress-bar></span></span>
+        <span class="progress__text" data-progress-text aria-live="polite">Uploading…</span>
+    </div>
+
+    <button class="btn btn--light btn--lg btn--block" type="submit" data-upload-btn>Create summary</button>
+</form>
