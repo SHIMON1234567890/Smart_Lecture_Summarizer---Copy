@@ -2,3 +2,4 @@
 __pycache__/
 subject_classifier/models/distilbert/
 *.zip
+summary_eval/results/run.log
